@@ -3,9 +3,9 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    TrialsEditorTool w;
-    w.show();
+    QApplication trialsEditorApp(argc, argv);
+    TrialsEditorTool trialsEditorTool;
+    trialsEditorTool.show();
 
-    return a.exec();
+    return trialsEditorApp.exec();
 }
