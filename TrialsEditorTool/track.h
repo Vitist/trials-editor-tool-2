@@ -7,17 +7,15 @@
 class Track
 {
 public:
-    Track(QFileInfo dir);
-    QByteArray readHexFile();
-    void writeHexFile();
-    void convertTrack();
-    void convertMetadata();
-    bool exportToEditor();
+    Track(QString trackPath);
+    QString getName();
+    void convertTrack(QString trackPath, QByteArray userId, QByteArray platform);
+    void convertMetadata(QString trackPath, QByteArray userId);
+    bool exportToEditor(QString userId, QString platform, QDir saveDir);
+    void copyFiles(QString destination);
 private:
     QString path;
     QString name;
-    QByteArray track;
-    QByteArray metadata;
 };
 
 #endif // TRACK_H

@@ -1,6 +1,7 @@
 #ifndef TRIALSEDITORTOOL_H
 #define TRIALSEDITORTOOL_H
 
+#include "track.h"
 #include <QMainWindow>
 #include <QDir>
 
@@ -26,8 +27,8 @@ private slots:
 
 private:
     Ui::TrialsEditorTool *ui;
-    QFileInfoList favoriteTracks;
-    QFileInfoList editorTracks;
+    QList<Track> favoriteTracks;
+    QList<Track> editorTracks;
 };
 
 #endif // TRIALSEDITORTOOL_H
