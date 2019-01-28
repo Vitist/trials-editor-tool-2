@@ -26,10 +26,14 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        trialseditortool.cpp
+        trialseditortool.cpp \
+    track.cpp \
+    config.cpp
 
 HEADERS += \
-        trialseditortool.h
+        trialseditortool.h \
+    track.h \
+    config.h
 
 FORMS += \
         trialseditortool.ui

@@ -61,7 +61,11 @@
        </layout>
       </item>
       <item>
-       <widget class="QListWidget" name="editorTrackList"/>
+       <widget class="QListWidget" name="editorTracksList">
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>

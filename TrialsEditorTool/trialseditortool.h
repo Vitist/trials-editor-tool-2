@@ -22,8 +22,12 @@ private slots:
 
     void on_removeTrackButton_clicked();
 
+    void on_addTrackButton_clicked();
+
 private:
     Ui::TrialsEditorTool *ui;
+    QFileInfoList favoriteTracks;
+    QFileInfoList editorTracks;
 };
 
 #endif // TRIALSEDITORTOOL_H

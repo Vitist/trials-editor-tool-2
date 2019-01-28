@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QDirIterator>
+#include <QStandardPaths>
 
 TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
     QMainWindow(parent),
@@ -11,8 +12,14 @@ TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QDir saveGamesFolder("C:/Users/Teemu/Documents/TrialsFusion/SavedGames");
-    scanDir(saveGamesFolder);
+    const QString documentsFolderPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if(!documentsFolderPath.isEmpty()) {
+        QDir saveGamesFolder(documentsFolderPath + "/TrialsFusion/SavedGames");
+        scanDir(saveGamesFolder);
+    }
+    else {
+        // TODO: Ask user to find correct folder
+    }
 }
 
 TrialsEditorTool::~TrialsEditorTool()
@@ -29,24 +36,55 @@ void TrialsEditorTool::scanDir(QDir dir)
 
     outputStream << "Scanning: " << dir.path();
 
-    QFileInfoList contentsInfo = dir.entryInfoList(QStringList() << "*-0000000*", QDir::Dirs | QDir::NoDotAndDotDot);
+    QFileInfoList trackDirectories = dir.entryInfoList(QStringList() << "*-0000000*", QDir::Dirs | QDir::NoDotAndDotDot);
 
-    QString excludeString = "0000000000000";
-    for(int i = 0; i < contentsInfo.size(); i++) {
-        if(contentsInfo.at(i).filePath().contains(excludeString)) {
-            contentsInfo.removeAt(i);
-            outputStream << i << "\n";
-            --i; // indexes change when item is removed
+    QString editorTrackIndex = "0000000000000";
+    foreach(QFileInfo track, trackDirectories) {
+        if(track.filePath().contains(editorTrackIndex)) {
+            editorTracks.push_back(track);
+        }
+        else {
+            favoriteTracks.push_back(track);
         }
     }
 
-    foreach(QFileInfo item, contentsInfo) {
-        outputStream << item.filePath() << "\n";
-        QFile file(item.filePath() + "\\displayname");
+    /* Populate the two lists
+     * TODO: create a funtion for this
+     */
+    foreach(QFileInfo track, favoriteTracks) {
+        outputStream << track.filePath() << "\n";
+        QFile file(track.filePath() + "\\displayname");
         file.open(QIODevice::ReadOnly);
         QByteArray line = file.readLine();
+        file.close();
         ui->availableTracksList->addItem(QString::fromUtf8(line));
     }
+
+    foreach(QFileInfo track, editorTracks) {
+        outputStream << track.filePath() << "\n";
+        QFile file(track.filePath() + "\\displayname");
+        file.open(QIODevice::ReadOnly);
+        QByteArray line = file.readLine();
+        file.close();
+        ui->editorTracksList->addItem(QString::fromUtf8(line));
+    }
+
+    QString userId = "4bf00161bc0597676a50b5322a159cd5";
+    QString platform = "deadbabe";
+
+    QByteArray userIdBytes = QByteArray::fromHex(userId.toLatin1());
+    QByteArray platformBytes = QByteArray::fromHex(platform.toLatin1());
+
+    QFileInfo testTrack = favoriteTracks.first();
+    QFile file(testTrack.filePath() + "\\track.trk");
+    file.open(QIODevice::ReadOnly);
+    QByteArray data = file.readAll();
+    data.replace(0, 4, platformBytes);
+    QFile testFile("D:\\Teemu\\test\\test.trk");
+    testFile.open(QIODevice::WriteOnly);
+    testFile.write(data);
+    testFile.close();
+    //outputStream << data;
 
     /*QDirIterator it(dir.path(), QStringList() << "displayname", QDir::NoFilter, QDirIterator::Subdirectories);
     while (it.hasNext()) {
@@ -57,7 +95,7 @@ void TrialsEditorTool::scanDir(QDir dir)
         ui->availableTracksList->addItem(QString::fromUtf8(line));
     }*/
 
-    outputStream << "\nScan complete";
+    outputStream << "\nScan complete\n";
 }
 
 void TrialsEditorTool::on_browseButton_clicked()
@@ -78,6 +116,14 @@ void TrialsEditorTool::on_browseButton_clicked()
 
 void TrialsEditorTool::on_removeTrackButton_clicked()
 {
-    QDir saveGamesFolder("C:/Users/Teemu/Documents/TrialsFusion/SavedGames");
-    scanDir(saveGamesFolder);
+    // TODO: remove track from editor list
+    QTextStream outputStream(stdout);
+    outputStream << "Selected track: " << ui->editorTracksList->currentItem()->text() << "\n";
+}
+
+void TrialsEditorTool::on_addTrackButton_clicked()
+{
+    // TODO: add track to editor list
+    QTextStream outputStream(stdout);
+    outputStream << "Selected track: " << ui->availableTracksList->currentItem()->text() << "\n";
 }
