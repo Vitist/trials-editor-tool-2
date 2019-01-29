@@ -58,10 +58,20 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="exportTrackButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Export</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>
-       <widget class="QListWidget" name="editorTracksList">
+       <widget class="QListWidget" name="exportTracksList">
         <property name="sortingEnabled">
          <bool>true</bool>
         </property>

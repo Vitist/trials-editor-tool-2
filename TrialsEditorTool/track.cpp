@@ -100,3 +100,8 @@ void Track::copyFiles(QString destination)
         QFile::copy(path + QDir::separator() + fileName, destination + QDir::separator() + fileName);
     }
 }
+
+bool Track::operator==(const Track &track) const
+{
+    return track.name == name && track.path == path;
+}

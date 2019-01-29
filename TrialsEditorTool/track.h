@@ -13,6 +13,8 @@ public:
     void convertMetadata(QString trackPath, QByteArray userId);
     bool exportToEditor(QString userId, QString platform, QDir saveDir);
     void copyFiles(QString destination);
+
+    bool operator==(const Track &track) const;
 private:
     QString path;
     QString name;

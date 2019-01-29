@@ -10,7 +10,8 @@ public:
     Config();
 
     void setConfig(QString userId, QString platform);
-    QMap<QString, QString> load();
+    QMap<QString, QString> getConfig();
+    bool load();
     void save();
 
 private:

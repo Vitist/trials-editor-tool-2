@@ -1,6 +1,7 @@
 #include "trialseditortool.h"
 #include "ui_trialseditortool.h"
 #include "track.h"
+#include "config.h"
 #include <QFileDialog>
 #include <QDirIterator>
 #include <QStandardPaths>
@@ -12,10 +13,20 @@ TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    //config.setConfig("4bf00161bc0597676a50b5322a159cd5", "deadbabe");
+    //config.save();
+    if(config.load()) {
+        qDebug() << "Config loaded";
+    }
+    else {
+        qDebug() << "Can't load config";
+    }
+
+    // Find SavedGames directory path
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if(!documentsDirPath.isEmpty()) {
-        QDir saveGamesDir(documentsDirPath + "/TrialsFusion/SavedGames");
-        scanDir(saveGamesDir);
+        saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
+        scanDir(saveDir);
     }
     else {
         // TODO: Ask user to find correct folder
@@ -27,13 +38,17 @@ TrialsEditorTool::~TrialsEditorTool()
     delete ui;
 }
 
+// Scan a directory for tracks
 void TrialsEditorTool::scanDir(QDir dir)
 {
     qDebug() << "Scanning: " << dir.path();
 
+    // Tracks end with an "-index"
     QFileInfoList trackDirectories = dir.entryInfoList(QStringList() << "*-0000000*", QDir::Dirs | QDir::NoDotAndDotDot);
 
+    // Editor track index is 0
     QString editorTrackIndex = "0000000000000";
+    // Separate favorite tracks and editor tracks
     foreach(QFileInfo track, trackDirectories) {
         if(track.filePath().contains(editorTrackIndex)) {
             editorTracks.push_back(Track(track.filePath()));
@@ -43,26 +58,12 @@ void TrialsEditorTool::scanDir(QDir dir)
         }
     }
 
-    /* Populate the two lists
-     * TODO: create a funtion for this
-     */
+    // Add favorite tracks to the QListWidget
     foreach(Track track, favoriteTracks) {
-        qDebug() << "Adding favorite: " << track.getName();
+        //qDebug() << "Adding favorite: " << track.getName();
         ui->availableTracksList->addItem(track.getName());
     }
 
-    foreach(Track track, editorTracks) {
-        qDebug() << "Adding editor: " << track.getName();
-        ui->editorTracksList->addItem(track.getName());
-    }
-
-    /*
-    QString userId = "4bf00161bc0597676a50b5322a159cd5";
-    QString platform = "deadbabe";
-
-    Track track = favoriteTracks.first();
-    track.exportToEditor(userId, platform, dir);
-    */
     qDebug() << "\nScan complete\n";
 }
 
@@ -81,14 +82,51 @@ void TrialsEditorTool::on_browseButton_clicked()
     // C:\Users\Teemu\Documents\TrialsFusion\SavedGames
 }
 
-void TrialsEditorTool::on_removeTrackButton_clicked()
-{
-    // TODO: remove track from editor list
-    qDebug() << "Selected track: " << ui->editorTracksList->currentItem()->text();
-}
-
 void TrialsEditorTool::on_addTrackButton_clicked()
 {
-    // TODO: add track to editor list
-    qDebug() << "Selected track: " << ui->availableTracksList->currentItem()->text();
+    // Get selected favorite tracks
+    QList<QListWidgetItem*> selectedItems = ui->availableTracksList->selectedItems();
+    foreach(QListWidgetItem* item, selectedItems) {
+        qDebug() << "Adding track: " << item->text();
+        // Find the selected track from favorites and add it to export
+        foreach(Track track, favoriteTracks) {
+            if (track.getName() == item->text()) {
+                exportTracks.append(track);
+                ui->exportTracksList->addItem(item->text());
+                ui->exportTrackButton->setEnabled(true);
+            }
+        }
+    }
+}
+
+void TrialsEditorTool::on_removeTrackButton_clicked()
+{
+    // Get selected export tracks
+    QList<QListWidgetItem*> selectedItems = ui->exportTracksList->selectedItems();
+    foreach(QListWidgetItem* item, selectedItems) {
+        qDebug() << "Removing track: " << item->text();
+        // Find the selected track from export and remove it
+        foreach(Track track, exportTracks) {
+            if(track.getName() == item->text()) {
+                exportTracks.removeAll(track);
+            }
+        }
+        // Remove track from export tracks
+        delete item;
+    }
+    if(exportTracks.isEmpty()) {
+        ui->exportTrackButton->setEnabled(false);
+    }
+}
+
+
+void TrialsEditorTool::on_exportTrackButton_clicked()
+{
+    foreach(Track track, exportTracks) {
+        qDebug() << "Exporting track: " + track.getName();
+        track.exportToEditor(config.getConfig().value("userId"), config.getConfig().value("platform"), saveDir);
+    }
+    exportTracks.clear();
+    ui->exportTracksList->clear();
+    ui->exportTrackButton->setEnabled(false);
 }
