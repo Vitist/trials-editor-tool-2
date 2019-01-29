@@ -18,13 +18,12 @@ QString Track::getName()
     return name;
 }
 
-void Track::convertTrack(QString trackPath, QByteArray userId, QByteArray platform)
+void Track::convertTrack(QString trackPath, QByteArray userId)
 {
     QFile file(trackPath + QDir::separator() + "track.trk");
     if(file.open(QIODevice::ReadWrite)) {
         qDebug() << "Converting track " << name;
         QByteArray content = file.readAll();
-        content.replace(0, 4, platform);
         content.replace(9, 16, userId);
         file.seek(0);
         file.write(content);
@@ -51,7 +50,7 @@ void Track::convertMetadata(QString trackPath, QByteArray userId)
     }
 }
 
-bool Track::exportToEditor(QString userId, QString platform, QDir saveDir)
+bool Track::exportToEditor(QString userId,QDir saveDir)
 {
     // Get track directory name
     QStringList pathDirs = path.split("/");
@@ -79,10 +78,9 @@ bool Track::exportToEditor(QString userId, QString platform, QDir saveDir)
 
     // Convert hex strings to byte arrays
     QByteArray userIdBytes = QByteArray::fromHex(userId.toLatin1());
-    QByteArray platformBytes = QByteArray::fromHex(platform.toLatin1());
 
     // Convert track and metadata files to work in the users editor
-    convertTrack(testDir.path() + QDir::separator() + exportTrackDir, userIdBytes, platformBytes);
+    convertTrack(testDir.path() + QDir::separator() + exportTrackDir, userIdBytes);
     convertMetadata(testDir.path() + QDir::separator() + exportTrackDir, userIdBytes);
 
     // TODO: change to void?

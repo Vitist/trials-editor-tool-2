@@ -2,6 +2,7 @@
 #include "ui_trialseditortool.h"
 #include "track.h"
 #include "config.h"
+#include "configdialog.h"
 #include <QFileDialog>
 #include <QDirIterator>
 #include <QStandardPaths>
@@ -13,24 +14,31 @@ TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    //config.setConfig("4bf00161bc0597676a50b5322a159cd5", "deadbabe");
-    //config.save();
-    if(config.load()) {
-        qDebug() << "Config loaded";
-    }
-    else {
-        qDebug() << "Can't load config";
-    }
-
     // Find SavedGames directory path
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if(!documentsDirPath.isEmpty()) {
         saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
-        scanDir(saveDir);
     }
     else {
         // TODO: Ask user to find correct folder
     }
+
+    while(!config.initialize(saveDir)) {
+        qDebug() << "Can't initialize config";
+        ConfigDialog dialog;
+        dialog.setModal(true);
+        if(dialog.exec()) {
+            //qDebug() << dialog.test();
+        }
+        else {
+            //qDebug() << dialog.test();
+        }
+    }
+    /*else {
+        qDebug() << "Config initialized";
+    }*/
+
+    scanDir(saveDir);
 }
 
 TrialsEditorTool::~TrialsEditorTool()
@@ -119,12 +127,11 @@ void TrialsEditorTool::on_removeTrackButton_clicked()
     }
 }
 
-
 void TrialsEditorTool::on_exportTrackButton_clicked()
 {
     foreach(Track track, exportTracks) {
         qDebug() << "Exporting track: " + track.getName();
-        track.exportToEditor(config.getConfig().value("userId"), config.getConfig().value("platform"), saveDir);
+        track.exportToEditor(config.getConfig().value("userId"), saveDir);
     }
     exportTracks.clear();
     ui->exportTracksList->clear();

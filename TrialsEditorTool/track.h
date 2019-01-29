@@ -9,9 +9,9 @@ class Track
 public:
     Track(QString trackPath);
     QString getName();
-    void convertTrack(QString trackPath, QByteArray userId, QByteArray platform);
+    void convertTrack(QString trackPath, QByteArray userId);
     void convertMetadata(QString trackPath, QByteArray userId);
-    bool exportToEditor(QString userId, QString platform, QDir saveDir);
+    bool exportToEditor(QString userId, QDir saveDir);
     void copyFiles(QString destination);
 
     bool operator==(const Track &track) const;

@@ -28,15 +28,18 @@ SOURCES += \
         main.cpp \
         trialseditortool.cpp \
     track.cpp \
-    config.cpp
+    config.cpp \
+    configdialog.cpp
 
 HEADERS += \
         trialseditortool.h \
     track.h \
-    config.h
+    config.h \
+    configdialog.h
 
 FORMS += \
-        trialseditortool.ui
+        trialseditortool.ui \
+    configdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

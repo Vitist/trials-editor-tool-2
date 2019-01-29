@@ -3,20 +3,20 @@
 
 #include <QMap>
 #include <QString>
+#include <QDir>
 
 class Config
 {
 public:
     Config();
 
-    void setConfig(QString userId, QString platform);
+    bool initialize(QDir saveDir);
     QMap<QString, QString> getConfig();
     bool load();
     void save();
 
 private:
     QString userId;
-    QString platform;
 };
 
 #endif // CONFIG_H
