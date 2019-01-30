@@ -35,8 +35,7 @@ bool Config::initialize(QDir saveDir)
 
             qDebug() << userIdCount;
             qDebug() << "Config initialized with user id: " << userId;
-        }
-        else {
+        } else {
             qDebug() << "No editor tracks found for config initialization";
             success = false;
         }
@@ -73,13 +72,11 @@ bool Config::load()
                 if(lineKeyAndValue.at(0) == "userId" && match.hasMatch()) {
                     userId = lineKeyAndValue.at(1);
                     qDebug() << "userId: " << userId;
-                }
-                else {
+                } else {
                     // Something wrong with config file
                     return false;
                 }
-            }
-            else {
+            } else {
                 // Something wrong with config file
                 return false;
             }

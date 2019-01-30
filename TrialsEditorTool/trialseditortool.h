@@ -18,6 +18,7 @@ public:
     explicit TrialsEditorTool(QWidget *parent = nullptr);
     ~TrialsEditorTool();
     void scanDir(QDir dir);
+    void setupFavoriteList();
 
 private slots:
     void on_browseButton_clicked();

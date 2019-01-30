@@ -3,6 +3,7 @@
 #include "track.h"
 #include "config.h"
 #include "configdialog.h"
+#include "trackoverwritedialog.h"
 #include <QFileDialog>
 #include <QDirIterator>
 #include <QStandardPaths>
@@ -18,8 +19,7 @@ TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if(!documentsDirPath.isEmpty()) {
         saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
-    }
-    else {
+    } else {
         // TODO: Ask user to find correct folder
     }
 
@@ -29,8 +29,7 @@ TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
         dialog.setModal(true);
         if(dialog.exec()) {
             //qDebug() << dialog.test();
-        }
-        else {
+        } else {
             //qDebug() << dialog.test();
         }
     }
@@ -39,6 +38,7 @@ TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
     }*/
 
     scanDir(saveDir);
+    setupFavoriteList();
 }
 
 TrialsEditorTool::~TrialsEditorTool()
@@ -51,6 +51,9 @@ void TrialsEditorTool::scanDir(QDir dir)
 {
     qDebug() << "Scanning: " << dir.path();
 
+    editorTracks.clear();
+    favoriteTracks.clear();
+
     // Tracks end with an "-index"
     QFileInfoList trackDirectories = dir.entryInfoList(QStringList() << "*-0000000*", QDir::Dirs | QDir::NoDotAndDotDot);
 
@@ -59,20 +62,22 @@ void TrialsEditorTool::scanDir(QDir dir)
     // Separate favorite tracks and editor tracks
     foreach(QFileInfo track, trackDirectories) {
         if(track.filePath().contains(editorTrackIndex)) {
-            editorTracks.push_back(Track(track.filePath()));
-        }
-        else {
-            favoriteTracks.push_back(Track(track.filePath()));
+            editorTracks.append(Track(track.filePath()));
+        } else {
+            favoriteTracks.append(Track(track.filePath()));
         }
     }
 
+    qDebug() << "\nScan complete\n";
+}
+
+void TrialsEditorTool::setupFavoriteList()
+{
     // Add favorite tracks to the QListWidget
     foreach(Track track, favoriteTracks) {
         //qDebug() << "Adding favorite: " << track.getName();
         ui->availableTracksList->addItem(track.getName());
     }
-
-    qDebug() << "\nScan complete\n";
 }
 
 void TrialsEditorTool::on_browseButton_clicked()
@@ -96,12 +101,23 @@ void TrialsEditorTool::on_addTrackButton_clicked()
     QList<QListWidgetItem*> selectedItems = ui->availableTracksList->selectedItems();
     foreach(QListWidgetItem* item, selectedItems) {
         qDebug() << "Adding track: " << item->text();
+
+        bool trackInExport = false;
+        foreach(Track track, exportTracks) {
+            if(track.getName() == item->text()) {
+                trackInExport = true;
+                qDebug() << "Track is already added to export";
+            }
+        }
+
         // Find the selected track from favorites and add it to export
-        foreach(Track track, favoriteTracks) {
-            if (track.getName() == item->text()) {
-                exportTracks.append(track);
-                ui->exportTracksList->addItem(item->text());
-                ui->exportTrackButton->setEnabled(true);
+        if(!trackInExport) {
+            foreach(Track track, favoriteTracks) {
+                if (track.getName() == item->text()) {
+                    exportTracks.append(track);
+                    ui->exportTracksList->addItem(item->text());
+                    ui->exportTrackButton->setEnabled(true);
+                }
             }
         }
     }
@@ -129,10 +145,37 @@ void TrialsEditorTool::on_removeTrackButton_clicked()
 
 void TrialsEditorTool::on_exportTrackButton_clicked()
 {
-    foreach(Track track, exportTracks) {
-        qDebug() << "Exporting track: " + track.getName();
-        track.exportToEditor(config.getConfig().value("userId"), saveDir);
+    foreach(Track exportTrack, exportTracks) {
+        qDebug() << "Exporting track: " + exportTrack.getName();
+        bool allowExport = true;
+        // Check if track is already available in the editor
+        foreach(Track editorTrack, editorTracks) {
+            if(editorTrack.getName() == exportTrack.getName()) {
+                qDebug() << "Track is already added to editor";
+
+                // Setup dialog for asking the user if they want to overwrite track
+                TrackOverwriteDialog dialog;
+                dialog.setModal(true);
+                dialog.setTrackName(editorTrack.getName());
+
+                // Ask the user if they want to overwrite track
+                // Remove track if allowed
+                if(dialog.exec()) {
+                    bool removed = editorTrack.removeFromDisk();
+                    if(removed) {
+                        qDebug() << "Track removed";
+                    }
+                } else {
+                    allowExport = false;
+                }
+            }
+        }
+
+        if(allowExport) {
+            exportTrack.exportToEditor(config.getConfig().value("userId"), saveDir);
+        }
     }
+    scanDir(saveDir);
     exportTracks.clear();
     ui->exportTracksList->clear();
     ui->exportTrackButton->setEnabled(false);

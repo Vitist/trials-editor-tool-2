@@ -27,8 +27,7 @@ void Track::convertTrack(QString trackPath, QByteArray userId)
         content.replace(9, 16, userId);
         file.seek(0);
         file.write(content);
-    }
-    else {
+    } else {
         qDebug() << "Couldn't open track file " << name;
     }
     file.close();
@@ -44,59 +43,60 @@ void Track::convertMetadata(QString trackPath, QByteArray userId)
         file.seek(0);
         file.write(content);
         file.close();
-    }
-    else {
+    } else {
         qDebug() << "Couldn't open metadata file " << name;
     }
 }
 
-bool Track::exportToEditor(QString userId,QDir saveDir)
+bool Track::exportToEditor(QString userId, QDir saveDir)
 {
     // Get track directory name
     QStringList pathDirs = path.split("/");
     QString trackDir = pathDirs.takeLast();
     // Track index, 0 for editor tracks
     QString editorTrackDirEnd = "-0000000000000";
-    // Track id consisting of an identifier and gamemode indicator
+    // Track id consisting of a timestamp in seconds and gamemode indicator
     QString trackId = trackDir.mid(32, 12);
     // Construct a path for a new editor track using an existing track in favorites
     QString exportTrackDir = userId + trackId + editorTrackDirEnd;
     QString exportPath = saveDir.path() + QDir::separator() + exportTrackDir;
     qDebug() << "Favorite path: " + path;
     qDebug() << "Export path: " + exportPath;
-    // Testing...
-    // TODO: create the folder in SavedGames
-    QDir testDir("D:/Teemu/test");
-    bool dirCreated = testDir.mkdir(exportTrackDir);
+    // Create a directory for the converted track
+    bool dirCreated = saveDir.mkdir(exportTrackDir);
     if(dirCreated) {
         qDebug() << "Directory created";
-    }
-    else {
+    } else {
         qDebug() << "Directory could not be created or already exists";
     }
-    copyFiles(testDir.path() + QDir::separator() + exportTrackDir);
+    copyFiles(exportPath);
 
     // Convert hex strings to byte arrays
     QByteArray userIdBytes = QByteArray::fromHex(userId.toLatin1());
 
     // Convert track and metadata files to work in the users editor
-    convertTrack(testDir.path() + QDir::separator() + exportTrackDir, userIdBytes);
-    convertMetadata(testDir.path() + QDir::separator() + exportTrackDir, userIdBytes);
+    convertTrack(exportPath, userIdBytes);
+    convertMetadata(exportPath, userIdBytes);
 
     // TODO: change to void?
     return true;
 }
 
-// Copy all files inside a directory into a new destination and overwrite if files already exist
+// Copy all files inside a directory into a new destination
 void Track::copyFiles(QString destination)
 {
     QDir dir(path);
     foreach (QString fileName, dir.entryList(QDir::Files)) {
-        if(QFile::exists(destination + QDir::separator() + fileName)) {
-            QFile::remove(destination + QDir::separator() + fileName);
-        }
         QFile::copy(path + QDir::separator() + fileName, destination + QDir::separator() + fileName);
     }
+}
+
+// Delete track files from SaveGames
+bool Track::removeFromDisk()
+{
+    QDir dir(path);
+    qDebug() << "Removing: " << path;
+    return dir.removeRecursively();
 }
 
 bool Track::operator==(const Track &track) const

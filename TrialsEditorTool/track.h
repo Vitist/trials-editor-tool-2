@@ -13,6 +13,7 @@ public:
     void convertMetadata(QString trackPath, QByteArray userId);
     bool exportToEditor(QString userId, QDir saveDir);
     void copyFiles(QString destination);
+    bool removeFromDisk();
 
     bool operator==(const Track &track) const;
 private:
