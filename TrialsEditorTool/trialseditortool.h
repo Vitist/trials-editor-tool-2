@@ -18,7 +18,7 @@ class TrialsEditorTool : public QMainWindow
 public:
     explicit TrialsEditorTool(QWidget *parent = nullptr);
     ~TrialsEditorTool();
-    bool initialize();
+    bool initialize(QString path);
     void scanSaveGamesFavorite();
     void scanSaveGamesEditor();
     void scanBrowseDir(QDir dir);
@@ -31,6 +31,8 @@ private slots:
     void on_exportTrackButton_clicked();
 
     void on_favoritesButton_clicked();
+
+    void on_selectDirLineEdit_editingFinished();
 
 private:
     Ui::TrialsEditorTool *ui;

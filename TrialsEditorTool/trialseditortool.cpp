@@ -28,7 +28,7 @@ TrialsEditorTool::~TrialsEditorTool()
     delete statusProgress;
 }
 
-bool TrialsEditorTool::initialize()
+bool TrialsEditorTool::initialize(QString path)
 {
     // Find SavedGames directory path
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
@@ -45,7 +45,13 @@ bool TrialsEditorTool::initialize()
                 return false;
             }
         }
-        scanSaveGamesFavorite();
+        // Check if a directory was given as a command line argument
+        if(path.count() == 0) {
+            scanSaveGamesFavorite();
+        } else {
+            scanBrowseDir(QDir(path));
+            ui->selectDirLineEdit->setText(path);
+        }
         setupAvailableList();
     } else {
         // TODO: Ask user to find correct folder
@@ -157,6 +163,7 @@ void TrialsEditorTool::setupAvailableList()
 
 void TrialsEditorTool::on_browseButton_clicked()
 {
+    // TODO:
     // Create a dialog for selecting a directory
     QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::Directory);
@@ -273,5 +280,11 @@ void TrialsEditorTool::on_favoritesButton_clicked()
 {
     ui->selectDirLineEdit->setText(saveDir.path());
     scanSaveGamesFavorite();
+    setupAvailableList();
+}
+
+void TrialsEditorTool::on_selectDirLineEdit_editingFinished()
+{
+    scanBrowseDir(ui->selectDirLineEdit->text());
     setupAvailableList();
 }
