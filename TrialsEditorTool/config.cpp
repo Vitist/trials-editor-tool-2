@@ -35,6 +35,7 @@ bool Config::initialize(QDir saveDir)
 
             qDebug() << userIdCount;
             qDebug() << "Config initialized with user id: " << userId;
+            save();
         } else {
             qDebug() << "No editor tracks found for config initialization";
             success = false;

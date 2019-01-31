@@ -5,6 +5,7 @@
 #include "config.h"
 #include <QMainWindow>
 #include <QDir>
+#include <QProgressBar>
 
 namespace Ui {
 class TrialsEditorTool;
@@ -17,6 +18,7 @@ class TrialsEditorTool : public QMainWindow
 public:
     explicit TrialsEditorTool(QWidget *parent = nullptr);
     ~TrialsEditorTool();
+    bool initialize();
     void scanSaveGamesFavorite();
     void scanSaveGamesEditor();
     void scanBrowseDir(QDir dir);
@@ -32,6 +34,7 @@ private slots:
 
 private:
     Ui::TrialsEditorTool *ui;
+    QProgressBar *statusProgress;
     Config config;
     QDir saveDir;
     QList<Track> editorTracks;

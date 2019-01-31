@@ -15,48 +15,74 @@ TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    // Find SavedGames directory path
-    const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    if(!documentsDirPath.isEmpty()) {
-        saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
-        ui->selectDirLineEdit->setText(saveDir.path());
-    } else {
-        // TODO: Ask user to find correct folder
-    }
-
-    while(!config.initialize(saveDir)) {
-        qDebug() << "Can't initialize config";
-        ConfigDialog dialog;
-        dialog.setModal(true);
-        dialog.exec();
-    }
-
-    scanSaveGamesFavorite();
-    setupAvailableList();
+    // Setup progress bar for track scanning and exporting
+    statusProgress = new QProgressBar(this);
+    statusProgress->setFixedHeight(10);
+    statusProgress->setVisible(false);
+    ui->statusBar->addPermanentWidget(statusProgress);
 }
 
 TrialsEditorTool::~TrialsEditorTool()
 {
     delete ui;
+    delete statusProgress;
+}
+
+bool TrialsEditorTool::initialize()
+{
+    // Find SavedGames directory path
+    const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
+    if(saveDir.exists()) {
+        ui->selectDirLineEdit->setText(saveDir.path());
+        // Initialize config with an editor track
+        // Ask the user to create a track if one can't be found
+        while(!config.initialize(saveDir)) {
+            qDebug() << "Can't initialize config";
+            ConfigDialog dialog;
+            dialog.setModal(true);
+            if(!dialog.exec()) {
+                return false;
+            }
+        }
+    } else {
+        // TODO: Ask user to find correct folder
+        qDebug() << "No SavedGames directory";
+    }
+
+    scanSaveGamesFavorite();
+    setupAvailableList();
+    return true;
 }
 
 void TrialsEditorTool::scanSaveGamesFavorite()
 {
     qDebug() << "\nScanning: " << saveDir.path();
+    ui->statusBar->clearMessage();
 
     availableTracks.clear();
 
     // Tracks end with an "-index"
     QFileInfoList trackDirectories = saveDir.entryInfoList(QStringList() << "*-0000000*", QDir::Dirs | QDir::NoDotAndDotDot);
-
     // Editor track index is 0
     QString editorTrackIndex = "0000000000000";
-    // Separate favorite tracks and editor tracks
+
+    int dirProcessedCount = 0;
+    statusProgress->setMaximum(trackDirectories.count());
+    statusProgress->setVisible(true);
     foreach(QFileInfo track, trackDirectories) {
         if(!track.filePath().contains(editorTrackIndex)) {
             qDebug() << "Adding favorite: " << track.filePath();
             availableTracks.append(Track(track.filePath()));
         }
+        statusProgress->setValue(++dirProcessedCount);
+    }
+
+    statusProgress->setVisible(false);
+    if(availableTracks.count() == 1) {
+        ui->statusBar->showMessage("Found " + QString::number(availableTracks.count()) + " track");
+    } else {
+        ui->statusBar->showMessage("Found " + QString::number(availableTracks.count()) + " tracks");
     }
 
     qDebug() << "Scan complete\n";
@@ -86,6 +112,7 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
         scanSaveGamesFavorite();
     } else {
         qDebug() << "\nScanning: " << dir.path();
+        ui->statusBar->clearMessage();
 
         availableTracks.clear();
 
@@ -97,11 +124,21 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
             // Tracks end with an "-index"
             QFileInfoList trackDirectories = dir.entryInfoList(QStringList() << "*-0000000*", QDir::Dirs | QDir::NoDotAndDotDot);
 
-            // Separate favorite tracks and editor tracks
+            int dirProcessedCount = 0;
+            statusProgress->setMaximum(trackDirectories.count());
+            statusProgress->setVisible(true);
             foreach(QFileInfo track, trackDirectories) {
                 qDebug() << "Adding browse: " << track.filePath();
                 availableTracks.append(Track(track.filePath()));
+                statusProgress->setValue(++dirProcessedCount);
             }
+        }
+
+        statusProgress->setVisible(false);
+        if(availableTracks.count() == 1) {
+            ui->statusBar->showMessage("Found " + QString::number(availableTracks.count()) + " track");
+        } else {
+            ui->statusBar->showMessage("Found " + QString::number(availableTracks.count()) + " tracks");
         }
 
         qDebug() << "Scan complete\n";
@@ -113,7 +150,7 @@ void TrialsEditorTool::setupAvailableList()
     ui->availableTracksList->clear();
     // Add favorite tracks to the QListWidget
     foreach(Track track, availableTracks) {
-        qDebug() << "Adding available: " << track.getName();
+        //qDebug() << "Adding available: " << track.getName();
         ui->availableTracksList->addItem(track.getName());
     }
 }
@@ -191,6 +228,9 @@ void TrialsEditorTool::on_removeTrackButton_clicked()
 void TrialsEditorTool::on_exportTrackButton_clicked()
 {
     scanSaveGamesEditor();
+    int exportProcessedCount = 0;
+    statusProgress->setMaximum(exportTracks.count());
+    statusProgress->setVisible(true);
     foreach(Track exportTrack, exportTracks) {
         qDebug() << "Exporting track: " + exportTrack.getName();
         bool allowExport = true;
@@ -220,10 +260,13 @@ void TrialsEditorTool::on_exportTrackButton_clicked()
         if(allowExport) {
             exportTrack.exportToEditor(config.getConfig().value("userId"), saveDir);
         }
+        statusProgress->setValue(++exportProcessedCount);
     }
     exportTracks.clear();
     ui->exportTracksList->clear();
     ui->exportTrackButton->setEnabled(false);
+
+    statusProgress->setVisible(false);
 }
 
 void TrialsEditorTool::on_favoritesButton_clicked()
