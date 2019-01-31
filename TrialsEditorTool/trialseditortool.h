@@ -17,8 +17,10 @@ class TrialsEditorTool : public QMainWindow
 public:
     explicit TrialsEditorTool(QWidget *parent = nullptr);
     ~TrialsEditorTool();
-    void scanDir(QDir dir);
-    void setupFavoriteList();
+    void scanSaveGamesFavorite();
+    void scanSaveGamesEditor();
+    void scanBrowseDir(QDir dir);
+    void setupAvailableList();
 
 private slots:
     void on_browseButton_clicked();
@@ -26,12 +28,14 @@ private slots:
     void on_removeTrackButton_clicked();
     void on_exportTrackButton_clicked();
 
+    void on_favoritesButton_clicked();
+
 private:
     Ui::TrialsEditorTool *ui;
     Config config;
     QDir saveDir;
-    QList<Track> favoriteTracks;
     QList<Track> editorTracks;
+    QList<Track> availableTracks;
     QList<Track> exportTracks;
 };
 
