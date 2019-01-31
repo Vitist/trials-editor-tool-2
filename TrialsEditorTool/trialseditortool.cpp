@@ -45,13 +45,13 @@ bool TrialsEditorTool::initialize()
                 return false;
             }
         }
+        scanSaveGamesFavorite();
+        setupAvailableList();
     } else {
         // TODO: Ask user to find correct folder
         qDebug() << "No SavedGames directory";
+        ui->statusBar->showMessage("No Trials Fusion SavedGames folder found");
     }
-
-    scanSaveGamesFavorite();
-    setupAvailableList();
     return true;
 }
 
