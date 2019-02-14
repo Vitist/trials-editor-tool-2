@@ -236,6 +236,7 @@ void TrialsEditorTool::on_exportTrackButton_clicked()
 {
     scanSaveGamesEditor();
     int exportProcessedCount = 0;
+    int exportedCount = 0;
     statusProgress->setMaximum(exportTracks.count());
     statusProgress->setVisible(true);
     foreach(Track exportTrack, exportTracks) {
@@ -266,9 +267,17 @@ void TrialsEditorTool::on_exportTrackButton_clicked()
 
         if(allowExport) {
             exportTrack.exportToEditor(config.getConfig().value("userId"), saveDir);
+            ++exportedCount;
         }
         statusProgress->setValue(++exportProcessedCount);
     }
+
+    if(exportedCount == 1) {
+        ui->statusBar->showMessage(QString::number(exportedCount) + " track exported to editor");
+    } else {
+        ui->statusBar->showMessage(QString::number(exportedCount) + " tracks exported to editor");
+    }
+
     exportTracks.clear();
     ui->exportTracksList->clear();
     ui->exportTrackButton->setEnabled(false);
