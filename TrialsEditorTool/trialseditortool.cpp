@@ -33,7 +33,6 @@ bool TrialsEditorTool::initialize(QString path)
     // Find SavedGames directory path
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     // Check for Trials games in the Documents directory
-    bool gameFound = true;
     QDir risingSaveDir = QDir(documentsDirPath + "/Trials Rising/SavedGames");
     QDir fusionSaveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
     if (risingSaveDir.exists() && fusionSaveDir.exists()) {
@@ -61,49 +60,20 @@ bool TrialsEditorTool::initialize(QString path)
             initWithFusion(fusionSaveDir);
         }
     } else {
-        gameFound = false;
+        // TODO: ask user to locate save dir
         qDebug() << "No Trials SavedGames dir";
         ui->statusBar->showMessage("No Trials SavedGames folder found");
     }
-    // Game found, load or initialize config
-    if(gameFound && !config.load()) {
-        ui->selectDirLineEdit->setText(saveDir.path());
-        // Initialize config with save directory name
-        if(!config.initialize(saveDir, Config::Rising)) {
-            qDebug() << "Can't initialize config with Rising";
-            ui->statusBar->showMessage("No Trials Fusion SavedGames folder found");
-        } else {
-            ui->risingRadioButton->setChecked(true);
-        }
+
+    // Check if a directory was given as a command line argument
+    if(path.count() == 0) {
+        scanSaveGamesFavorite();
     } else {
-        saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
-        if(saveDir.exists()) {
-            ui->selectDirLineEdit->setText(saveDir.path());
-            // Initialize config with an editor track
-            // Ask the user to create a track if one can't be found
-            while(!config.initialize(saveDir, Config::Fusion)) {
-                qDebug() << "Can't initialize config with Fusion";
-                ConfigDialog dialog;
-                dialog.setModal(true);
-                if(!dialog.exec()) {
-                    return false;
-                }
-            }
-            // Check if a directory was given as a command line argument
-            if(path.count() == 0) {
-                scanSaveGamesFavorite();
-            } else {
-                scanBrowseDir(QDir(path));
-                ui->selectDirLineEdit->setText(path);
-            }
-            setupAvailableList();
-        }
+        scanBrowseDir(QDir(path));
+        ui->selectDirLineEdit->setText(path);
     }
-    /*} else {
-        // TODO: Ask user to find correct folder
-        qDebug() << "No SavedGames directory";
-        ui->statusBar->showMessage("No Trials Fusion SavedGames folder found");
-    }*/
+    setupAvailableList();
+    // Return false to close the program if init fails
     return true;
 }
 
