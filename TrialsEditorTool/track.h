@@ -7,18 +7,11 @@
 class Track
 {
 public:
-    Track(QString trackPath);
-    QString getName();
-    void convertTrack(QString trackPath, QByteArray userId);
-    void convertMetadata(QString trackPath, QByteArray userId);
-    bool exportToEditor(QString userId, QDir saveDir);
-    void copyFiles(QString destination);
-    bool removeFromDisk();
-
-    bool operator==(const Track &track) const;
-private:
-    QString path;
-    QString name;
+    Track();
+    virtual ~Track();
+    virtual QString getName() const = 0;
+    virtual bool exportToEditor(QString userId, QDir saveDir) const = 0;
+    virtual bool removeFromDisk() const = 0;
 };
 
 #endif // TRACK_H

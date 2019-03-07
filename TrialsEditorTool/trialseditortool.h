@@ -3,9 +3,11 @@
 
 #include "track.h"
 #include "config.h"
+#include <memory>
 #include <QMainWindow>
 #include <QDir>
 #include <QProgressBar>
+#include <QScopedPointer>
 
 namespace Ui {
 class TrialsEditorTool;
@@ -39,9 +41,9 @@ private:
     QProgressBar *statusProgress;
     Config config;
     QDir saveDir;
-    QList<Track> editorTracks;
-    QList<Track> availableTracks;
-    QList<Track> exportTracks;
+    QList<std::shared_ptr<Track>> editorTracks;
+    QList<std::shared_ptr<Track>> availableTracks;
+    QList<std::shared_ptr<Track>> exportTracks;
 };
 
 #endif // TRIALSEDITORTOOL_H

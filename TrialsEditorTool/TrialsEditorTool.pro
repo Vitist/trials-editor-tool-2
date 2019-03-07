@@ -31,14 +31,16 @@ SOURCES += \
     track.cpp \
     config.cpp \
     configdialog.cpp \
-    trackoverwritedialog.cpp
+    trackoverwritedialog.cpp \
+    fusiontrack.cpp
 
 HEADERS += \
         trialseditortool.h \
     track.h \
     config.h \
     configdialog.h \
-    trackoverwritedialog.h
+    trackoverwritedialog.h \
+    fusiontrack.h
 
 FORMS += \
         trialseditortool.ui \

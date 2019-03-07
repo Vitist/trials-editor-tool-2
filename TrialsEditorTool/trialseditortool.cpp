@@ -1,6 +1,6 @@
 #include "trialseditortool.h"
 #include "ui_trialseditortool.h"
-#include "track.h"
+#include "fusiontrack.h"
 #include "config.h"
 #include "configdialog.h"
 #include "trackoverwritedialog.h"
@@ -79,7 +79,7 @@ void TrialsEditorTool::scanSaveGamesFavorite()
     foreach(QFileInfo track, trackDirectories) {
         if(!track.filePath().contains(editorTrackIndex)) {
             qDebug() << "Adding favorite: " << track.filePath();
-            availableTracks.append(Track(track.filePath()));
+            availableTracks.append(std::shared_ptr<Track>(new FusionTrack(track.filePath())));
         }
         statusProgress->setValue(++dirProcessedCount);
     }
@@ -105,7 +105,7 @@ void TrialsEditorTool::scanSaveGamesEditor()
 
     foreach(QFileInfo track, trackDirectories) {
         qDebug() << "Adding editor: " << track.filePath();
-        editorTracks.append(Track(track.filePath()));
+        editorTracks.append(std::shared_ptr<Track>(new FusionTrack(track.filePath())));
     }
 
     qDebug() << "Scan complete\n";
@@ -124,7 +124,7 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
 
         if(dir.dirName().contains("-0000000")) {
             qDebug() << "Selected directory is a track";
-            availableTracks.append(Track(dir.path()));
+            availableTracks.append(std::shared_ptr<Track>(new FusionTrack(dir.path())));
         } else {
             qDebug() << "Searching tracks from selected directory";
             // Tracks end with an "-index"
@@ -135,7 +135,7 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
             statusProgress->setVisible(true);
             foreach(QFileInfo track, trackDirectories) {
                 qDebug() << "Adding browse: " << track.filePath();
-                availableTracks.append(Track(track.filePath()));
+                availableTracks.append(std::shared_ptr<Track>(new FusionTrack(track.filePath())));
                 statusProgress->setValue(++dirProcessedCount);
             }
         }
@@ -155,9 +155,9 @@ void TrialsEditorTool::setupAvailableList()
 {
     ui->availableTracksList->clear();
     // Add favorite tracks to the QListWidget
-    foreach(Track track, availableTracks) {
+    foreach(std::shared_ptr<Track> track, availableTracks) {
         //qDebug() << "Adding available: " << track.getName();
-        ui->availableTracksList->addItem(track.getName());
+        ui->availableTracksList->addItem(track->getName());
     }
 }
 
@@ -192,8 +192,8 @@ void TrialsEditorTool::on_addTrackButton_clicked()
         qDebug() << "Adding track: " << item->text();
 
         bool trackInExport = false;
-        foreach(Track track, exportTracks) {
-            if(track.getName() == item->text()) {
+        foreach(std::shared_ptr<Track> track, exportTracks) {
+            if(track->getName() == item->text()) {
                 trackInExport = true;
                 qDebug() << "Track is already added to export";
             }
@@ -201,8 +201,8 @@ void TrialsEditorTool::on_addTrackButton_clicked()
 
         // Find the selected track from favorites and add it to export
         if(!trackInExport) {
-            foreach(Track track, availableTracks) {
-                if (track.getName() == item->text()) {
+            foreach(std::shared_ptr<Track> track, availableTracks) {
+                if (track->getName() == item->text()) {
                     exportTracks.append(track);
                     ui->exportTracksList->addItem(item->text());
                     ui->exportTrackButton->setEnabled(true);
@@ -219,8 +219,8 @@ void TrialsEditorTool::on_removeTrackButton_clicked()
     foreach(QListWidgetItem* item, selectedItems) {
         qDebug() << "Removing track: " << item->text();
         // Find the selected track from export and remove it
-        foreach(Track track, exportTracks) {
-            if(track.getName() == item->text()) {
+        foreach(std::shared_ptr<Track> track, exportTracks) {
+            if(track->getName() == item->text()) {
                 exportTracks.removeAll(track);
             }
         }
@@ -239,23 +239,23 @@ void TrialsEditorTool::on_exportTrackButton_clicked()
     int exportedCount = 0;
     statusProgress->setMaximum(exportTracks.count());
     statusProgress->setVisible(true);
-    foreach(Track exportTrack, exportTracks) {
-        qDebug() << "Exporting track: " + exportTrack.getName();
+    foreach(std::shared_ptr<Track> exportTrack, exportTracks) {
+        qDebug() << "Exporting track: " + exportTrack->getName();
         bool allowExport = true;
         // Check if track is already available in the editor
-        foreach(Track editorTrack, editorTracks) {
-            if(editorTrack.getName() == exportTrack.getName()) {
+        foreach(std::shared_ptr<Track> editorTrack, editorTracks) {
+            if(editorTrack->getName() == exportTrack->getName()) {
                 qDebug() << "Track is already added to editor";
 
                 // Setup dialog for asking the user if they want to overwrite track
                 TrackOverwriteDialog dialog;
                 dialog.setModal(true);
-                dialog.setTrackName(editorTrack.getName());
+                dialog.setTrackName(editorTrack->getName());
 
                 // Ask the user if they want to overwrite track
                 // Remove track if allowed
                 if(dialog.exec()) {
-                    bool removed = editorTrack.removeFromDisk();
+                    bool removed = editorTrack->removeFromDisk();
                     if(removed) {
                         qDebug() << "Track removed";
                     }
@@ -266,7 +266,7 @@ void TrialsEditorTool::on_exportTrackButton_clicked()
         }
 
         if(allowExport) {
-            exportTrack.exportToEditor(config.getConfig().value("userId"), saveDir);
+            exportTrack->exportToEditor(config.getConfig().value("userId"), saveDir);
             ++exportedCount;
         }
         statusProgress->setValue(++exportProcessedCount);
