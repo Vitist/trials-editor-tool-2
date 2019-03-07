@@ -32,32 +32,78 @@ bool TrialsEditorTool::initialize(QString path)
 {
     // Find SavedGames directory path
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
-    if(saveDir.exists()) {
-        ui->selectDirLineEdit->setText(saveDir.path());
-        // Initialize config with an editor track
-        // Ask the user to create a track if one can't be found
-        while(!config.initialize(saveDir)) {
-            qDebug() << "Can't initialize config";
-            ConfigDialog dialog;
-            dialog.setModal(true);
-            if(!dialog.exec()) {
-                return false;
+    // Check for Trials games in the Documents directory
+    bool gameFound = true;
+    QDir risingSaveDir = QDir(documentsDirPath + "/Trials Rising/SavedGames");
+    QDir fusionSaveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
+    if (risingSaveDir.exists() && fusionSaveDir.exists()) {
+        saveDir = risingSaveDir;
+        ui->risingRadioButton->setEnabled(true);
+        ui->risingRadioButton->setChecked(true);
+        ui->fusionRadioButton->setEnabled(true);
+        if(!config.load()) {
+            if(!initWithRising(risingSaveDir)) {
+                initWithFusion(fusionSaveDir);
             }
         }
-        // Check if a directory was given as a command line argument
-        if(path.count() == 0) {
-            scanSaveGamesFavorite();
-        } else {
-            scanBrowseDir(QDir(path));
-            ui->selectDirLineEdit->setText(path);
+    } else if(risingSaveDir.exists()) {
+        saveDir = risingSaveDir;
+        ui->risingRadioButton->setEnabled(true);
+        ui->risingRadioButton->setChecked(true);
+        if(!config.load()) {
+            initWithRising(risingSaveDir);
         }
-        setupAvailableList();
+    } else if(fusionSaveDir.exists()) {
+        saveDir = fusionSaveDir;
+        ui->fusionRadioButton->setEnabled(true);
+        ui->fusionRadioButton->setChecked(true);
+        if(!config.load()) {
+            initWithFusion(fusionSaveDir);
+        }
     } else {
+        gameFound = false;
+        qDebug() << "No Trials SavedGames dir";
+        ui->statusBar->showMessage("No Trials SavedGames folder found");
+    }
+    // Game found, load or initialize config
+    if(gameFound && !config.load()) {
+        ui->selectDirLineEdit->setText(saveDir.path());
+        // Initialize config with save directory name
+        if(!config.initialize(saveDir, Config::Rising)) {
+            qDebug() << "Can't initialize config with Rising";
+            ui->statusBar->showMessage("No Trials Fusion SavedGames folder found");
+        } else {
+            ui->risingRadioButton->setChecked(true);
+        }
+    } else {
+        saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
+        if(saveDir.exists()) {
+            ui->selectDirLineEdit->setText(saveDir.path());
+            // Initialize config with an editor track
+            // Ask the user to create a track if one can't be found
+            while(!config.initialize(saveDir, Config::Fusion)) {
+                qDebug() << "Can't initialize config with Fusion";
+                ConfigDialog dialog;
+                dialog.setModal(true);
+                if(!dialog.exec()) {
+                    return false;
+                }
+            }
+            // Check if a directory was given as a command line argument
+            if(path.count() == 0) {
+                scanSaveGamesFavorite();
+            } else {
+                scanBrowseDir(QDir(path));
+                ui->selectDirLineEdit->setText(path);
+            }
+            setupAvailableList();
+        }
+    }
+    /*} else {
         // TODO: Ask user to find correct folder
         qDebug() << "No SavedGames directory";
         ui->statusBar->showMessage("No Trials Fusion SavedGames folder found");
-    }
+    }*/
     return true;
 }
 
@@ -159,6 +205,30 @@ void TrialsEditorTool::setupAvailableList()
         //qDebug() << "Adding available: " << track.getName();
         ui->availableTracksList->addItem(track->getName());
     }
+}
+
+bool TrialsEditorTool::initWithRising(QDir dir)
+{
+    if(!config.initialize(dir, Config::Rising)) {
+        qDebug() << "Config init with Rising failed";
+        ui->statusBar->showMessage("Config initialization failed: no uplay id found.");
+        return false;
+    }
+    return true;
+}
+
+bool TrialsEditorTool::initWithFusion(QDir dir)
+{
+    while(!config.initialize(dir, Config::Fusion)) {
+        qDebug() << "Config init with Fusion failed";
+        ConfigDialog dialog;
+        dialog.setModal(true);
+        if(!dialog.exec()) {
+            ui->statusBar->showMessage("Config initialization failed: no uplay id found.");
+            return false;
+        }
+    }
+    return true;
 }
 
 void TrialsEditorTool::on_browseButton_clicked()

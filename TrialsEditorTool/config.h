@@ -8,9 +8,14 @@
 class Config
 {
 public:
+    enum Game {
+        Rising,
+        Fusion
+    };
+
     Config();
 
-    bool initialize(QDir saveDir);
+    bool initialize(QDir saveDir, Game game);
     QMap<QString, QString> getConfig();
     bool load();
     void save();

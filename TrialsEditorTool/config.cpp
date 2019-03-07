@@ -8,7 +8,7 @@ Config::Config(): userId("")
 {
 }
 
-bool Config::initialize(QDir saveDir)
+bool Config::initialize(QDir saveDir, Game game)
 {
     bool success = true;
     if(!load()){

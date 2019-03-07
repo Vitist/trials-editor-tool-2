@@ -25,6 +25,8 @@ public:
     void scanSaveGamesEditor();
     void scanBrowseDir(QDir dir);
     void setupAvailableList();
+    bool initWithRising(QDir dir);
+    bool initWithFusion(QDir dir);
 
 private slots:
     void on_browseButton_clicked();
