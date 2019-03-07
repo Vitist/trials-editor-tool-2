@@ -6,11 +6,11 @@
 FusionTrack::FusionTrack(QString trackPath): path(trackPath)
 {
     QFile file(trackPath + "\\displayname");
-       if(file.open(QIODevice::ReadOnly)) {
-           QByteArray line = file.readLine();
-           name = QString::fromUtf8(line);
-           file.close();
-       }
+    if(file.open(QIODevice::ReadOnly)) {
+        QByteArray line = file.readLine();
+        name = QString::fromUtf8(line);
+        file.close();
+    }
 }
 
 FusionTrack::~FusionTrack()

@@ -21,8 +21,12 @@ public:
     explicit TrialsEditorTool(QWidget *parent = nullptr);
     ~TrialsEditorTool();
     bool initialize(QString path);
-    void scanSaveGamesFavorite();
-    void scanSaveGamesEditor();
+    void scanFusionDownloads();
+    void scanFusionEditor();
+    void scanRisingDownloads();
+    void scanRisingEditor();
+    void scanDownloads();
+    void scanEditor();
     void scanBrowseDir(QDir dir);
     void setupAvailableList();
     bool initWithRising(QDir dir);
@@ -33,9 +37,7 @@ private slots:
     void on_addTrackButton_clicked();
     void on_removeTrackButton_clicked();
     void on_exportTrackButton_clicked();
-
     void on_favoritesButton_clicked();
-
     void on_selectDirLineEdit_editingFinished();
 
 private:

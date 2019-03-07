@@ -1,6 +1,7 @@
 #include "trialseditortool.h"
 #include "ui_trialseditortool.h"
 #include "fusiontrack.h"
+#include "risingtrack.h"
 #include "config.h"
 #include "configdialog.h"
 #include "trackoverwritedialog.h"
@@ -67,7 +68,7 @@ bool TrialsEditorTool::initialize(QString path)
 
     // Check if a directory was given as a command line argument
     if(path.count() == 0) {
-        scanSaveGamesFavorite();
+        scanDownloads();
     } else {
         scanBrowseDir(QDir(path));
         ui->selectDirLineEdit->setText(path);
@@ -77,7 +78,7 @@ bool TrialsEditorTool::initialize(QString path)
     return true;
 }
 
-void TrialsEditorTool::scanSaveGamesFavorite()
+void TrialsEditorTool::scanFusionDownloads()
 {
     qDebug() << "\nScanning: " << saveDir.path();
     ui->statusBar->clearMessage();
@@ -110,7 +111,7 @@ void TrialsEditorTool::scanSaveGamesFavorite()
     qDebug() << "Scan complete\n";
 }
 
-void TrialsEditorTool::scanSaveGamesEditor()
+void TrialsEditorTool::scanFusionEditor()
 {
     qDebug() << "\nScanning: " << saveDir.path();
 
@@ -127,11 +128,110 @@ void TrialsEditorTool::scanSaveGamesEditor()
     qDebug() << "Scan complete\n";
 }
 
+void TrialsEditorTool::scanRisingDownloads()
+{
+    QDir downloadsDir = saveDir;
+    qDebug() << "\nScanning: " << downloadsDir.path();
+    ui->statusBar->clearMessage();
+
+    availableTracks.clear();
+
+    // Find the user directory inside SavedGames
+    QFileInfoList userDirectories = downloadsDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    // Change directory to downloaded tracks directory inside the user directory
+    if (!userDirectories.empty()) {
+        downloadsDir.cd(userDirectories.first().fileName() + "/CacheStorage/usertracks");
+        qDebug() << downloadsDir.path();
+        QFileInfoList trackDirectories = downloadsDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+        int dirProcessedCount = 0;
+        statusProgress->setMaximum(trackDirectories.count());
+        statusProgress->setVisible(true);
+        foreach(QFileInfo track, trackDirectories) {
+            qDebug() << "Adding favorite: " << track.fileName();
+            availableTracks.append(std::shared_ptr<Track>(new RisingTrack(track.filePath())));
+            statusProgress->setValue(++dirProcessedCount);
+        }
+    } else {
+        qDebug() << "No Rising user directory found";
+    }
+
+    /*int dirProcessedCount = 0;
+    statusProgress->setMaximum(downloadsDir.count());
+    statusProgress->setVisible(true);
+    foreach(QFileInfo track, downloadsDir) {
+        if(!track.filePath().contains(editorTrackIndex)) {
+            qDebug() << "Adding favorite: " << track.filePath();
+            availableTracks.append(std::shared_ptr<Track>(new FusionTrack(track.filePath())));
+        }
+        statusProgress->setValue(++dirProcessedCount);
+    }*/
+
+    statusProgress->setVisible(false);
+    if(availableTracks.count() == 1) {
+        ui->statusBar->showMessage("Found " + QString::number(availableTracks.count()) + " track");
+    } else {
+        ui->statusBar->showMessage("Found " + QString::number(availableTracks.count()) + " tracks");
+    }
+
+    qDebug() << "Scan complete\n";
+}
+
+void TrialsEditorTool::scanRisingEditor()
+{
+    QDir editorDir = saveDir;
+    qDebug() << "\nScanning: " << editorDir.path();
+
+    editorTracks.clear();
+
+    // Find the user directory inside SavedGames
+    QFileInfoList userDirectories = editorDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    // Saved objects end with .o
+    QString objectEnd = ".o";
+
+    // Change directory to downloaded tracks directory inside the user directory
+    if (!userDirectories.empty()) {
+        editorDir.cd(userDirectories.first().fileName() + "/usertracks");
+        qDebug() << editorDir.path();
+        QFileInfoList trackDirectories = editorDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+        foreach(QFileInfo track, trackDirectories) {
+            if(!track.filePath().contains(objectEnd)) {
+                qDebug() << "Adding editor: " << track.fileName();
+                editorTracks.append(std::shared_ptr<Track>(new RisingTrack(track.filePath())));
+            }
+        }
+    } else {
+        qDebug() << "No Rising user directory found";
+    }
+
+    qDebug() << "Scan complete\n";
+}
+
+void TrialsEditorTool::scanDownloads()
+{
+    if(ui->risingRadioButton->isChecked()) {
+        scanRisingDownloads();
+    } else {
+        scanFusionDownloads();
+    }
+}
+
+void TrialsEditorTool::scanEditor()
+{
+    if(ui->risingRadioButton->isChecked()) {
+        scanRisingEditor();
+    } else {
+        scanFusionEditor();
+    }
+}
+
 void TrialsEditorTool::scanBrowseDir(QDir dir)
 {
     // Check if the user selected SavedGames directory
     if(dir.path() == saveDir.path()) {
-        scanSaveGamesFavorite();
+        scanDownloads();
     } else {
         qDebug() << "\nScanning: " << dir.path();
         ui->statusBar->clearMessage();
@@ -274,7 +374,7 @@ void TrialsEditorTool::on_removeTrackButton_clicked()
 
 void TrialsEditorTool::on_exportTrackButton_clicked()
 {
-    scanSaveGamesEditor();
+    scanEditor();
     int exportProcessedCount = 0;
     int exportedCount = 0;
     statusProgress->setMaximum(exportTracks.count());
@@ -328,7 +428,7 @@ void TrialsEditorTool::on_exportTrackButton_clicked()
 void TrialsEditorTool::on_favoritesButton_clicked()
 {
     ui->selectDirLineEdit->setText(saveDir.path());
-    scanSaveGamesFavorite();
+    scanDownloads();
     setupAvailableList();
 }
 

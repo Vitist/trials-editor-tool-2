@@ -6,7 +6,7 @@
 class RisingTrack : public Track
 {
 public:
-    RisingTrack();
+    RisingTrack(QString trackPath);
     virtual ~RisingTrack();
 
     QString getName() const;
