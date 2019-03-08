@@ -86,7 +86,7 @@
         <item>
          <widget class="QPushButton" name="favoritesButton">
           <property name="text">
-           <string>Favorites</string>
+           <string>Downloaded</string>
           </property>
          </widget>
         </item>

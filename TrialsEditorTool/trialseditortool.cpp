@@ -69,6 +69,7 @@ bool TrialsEditorTool::initialize(QString path)
     // Check if a directory was given as a command line argument
     if(path.count() == 0) {
         scanDownloads();
+        ui->selectDirLineEdit->setText(saveDir.path());
     } else {
         scanBrowseDir(QDir(path));
         ui->selectDirLineEdit->setText(path);
@@ -95,7 +96,7 @@ void TrialsEditorTool::scanFusionDownloads()
     statusProgress->setVisible(true);
     foreach(QFileInfo track, trackDirectories) {
         if(!track.filePath().contains(editorTrackIndex)) {
-            qDebug() << "Adding favorite: " << track.filePath();
+            //qDebug() << "Adding favorite: " << track.filePath();
             availableTracks.append(std::shared_ptr<Track>(new FusionTrack(track.filePath())));
         }
         statusProgress->setValue(++dirProcessedCount);
@@ -148,7 +149,7 @@ void TrialsEditorTool::scanRisingDownloads()
         statusProgress->setMaximum(trackDirectories.count());
         statusProgress->setVisible(true);
         foreach(QFileInfo track, trackDirectories) {
-            qDebug() << "Adding favorite: " << track.fileName();
+            //qDebug() << "Adding favorite: " << track.fileName();
             availableTracks.append(std::shared_ptr<Track>(new RisingTrack(track.filePath())));
             statusProgress->setValue(++dirProcessedCount);
         }
@@ -425,4 +426,27 @@ void TrialsEditorTool::on_selectDirLineEdit_editingFinished()
 {
     scanBrowseDir(ui->selectDirLineEdit->text());
     setupAvailableList();
+}
+void TrialsEditorTool::on_risingRadioButton_toggled(bool checked)
+{
+    if(checked) {
+        // Change game SavedGames directory
+        const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        saveDir = QDir(documentsDirPath + "/Trials Rising/SavedGames");
+        ui->selectDirLineEdit->setText(saveDir.path());
+        scanDownloads();
+        setupAvailableList();
+    }
+}
+
+void TrialsEditorTool::on_fusionRadioButton_toggled(bool checked)
+{
+    if(checked) {
+        // Change game SavedGames directory
+        const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        saveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
+        ui->selectDirLineEdit->setText(saveDir.path());
+        scanDownloads();
+        setupAvailableList();
+    }
 }

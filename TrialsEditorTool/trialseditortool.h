@@ -39,6 +39,8 @@ private slots:
     void on_exportTrackButton_clicked();
     void on_favoritesButton_clicked();
     void on_selectDirLineEdit_editingFinished();
+    void on_risingRadioButton_toggled(bool checked);
+    void on_fusionRadioButton_toggled(bool checked);
 
 private:
     Ui::TrialsEditorTool *ui;

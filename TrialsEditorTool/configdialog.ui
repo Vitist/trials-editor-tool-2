@@ -27,7 +27,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="text">
-        <string>Couldn't find an editor track for initial setup.
+        <string>Couldn't find an editor track in Trials Fusion save folder for initial setup.
 Please open the editor, create a new track and save it.</string>
        </property>
        <property name="scaledContents">
