@@ -239,7 +239,7 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
     // Check if the user selected SavedGames directory
     if(dir.path() == fusionSaveDir.path() && dir.path() == risingSaveDir.path()) {
         scanDownloads();
-    } else {
+    } else if(!dir.path().contains(".o")) {
         qDebug() << "\nScanning: " << dir.path();
         ui->statusBar->showMessage("Scanning folder...");
 
@@ -259,31 +259,33 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
 
         // Iterate through the selected directory contents
         foreach(QFileInfo dirContent, dirContents) {
-            // Check if currently selected directory is a track
-            if(dirContent.fileName() == "displayname") {
-                // Fusion track
-                availableTracks.append(std::shared_ptr<Track>(new FusionTrack(dir.path())));
-                ++fusionTrackCount;
-            } else if(dirContent.fileName() == "thumbnail.thn") {
-                // Rising track
-                availableTracks.append(std::shared_ptr<Track>(new RisingTrack(dir.path())));
-                ++risingTrackCount;
-            } else if(!dirContent.fileName().contains(".o")) {
-                // Subdirectory that isn't a saved object group
-                QDir subDir(dirContent.filePath());
-                // Only check files inside subdirectories
-                QFileInfoList subDirContents = subDir.entryInfoList(QDir::Files);
+            // Skip past object directories
+            if(!dirContent.fileName().contains(".o")){
+                // Check if currently selected directory is a track
+                if(dirContent.fileName() == "displayname") {
+                    // Fusion track
+                    availableTracks.append(std::shared_ptr<Track>(new FusionTrack(dir.path())));
+                    ++fusionTrackCount;
+                } else if(dirContent.fileName() == "thumbnail.thn") {
+                    // Rising track
+                    availableTracks.append(std::shared_ptr<Track>(new RisingTrack(dir.path())));
+                    ++risingTrackCount;
+                } else {
+                    // Only check files inside subdirectories
+                    QDir subDir(dirContent.filePath());
+                    QFileInfoList subDirContents = subDir.entryInfoList(QDir::Files);
 
-                // Check if the subdirectory contains track files
-                foreach(QFileInfo subDirContent, subDirContents) {
-                    if(subDirContent.fileName() == "displayname") {
-                        // Fusion track
-                        availableTracks.append(std::shared_ptr<Track>(new FusionTrack(subDir.path())));
-                        ++fusionTrackCount;
-                    } else if(subDirContent.fileName() == "thumbnail.thn") {
-                        // Rising track
-                        availableTracks.append(std::shared_ptr<Track>(new RisingTrack(subDir.path())));
-                        ++risingTrackCount;
+                    // Check if the subdirectory contains track files
+                    foreach(QFileInfo subDirContent, subDirContents) {
+                        if(subDirContent.fileName() == "displayname") {
+                            // Fusion track
+                            availableTracks.append(std::shared_ptr<Track>(new FusionTrack(subDir.path())));
+                            ++fusionTrackCount;
+                        } else if(subDirContent.fileName() == "thumbnail.thn") {
+                            // Rising track
+                            availableTracks.append(std::shared_ptr<Track>(new RisingTrack(subDir.path())));
+                            ++risingTrackCount;
+                        }
                     }
                 }
             }
@@ -297,6 +299,9 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
         }
 
         qDebug() << "Scan complete\n";
+    } else {
+        availableTracks.clear();
+        setupAvailableList();
     }
 }
 
@@ -367,7 +372,6 @@ bool TrialsEditorTool::initWithFusion(QDir dir)
 
 void TrialsEditorTool::on_browseButton_clicked()
 {
-    // TODO:
     // Create a dialog for selecting a directory
     QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::Directory);
@@ -385,6 +389,11 @@ void TrialsEditorTool::on_browseButton_clicked()
         ui->selectDirLineEdit->setText(browseDir.path());
         scanBrowseDir(browseDir);
         setupAvailableList();
+
+        // Clear export track list
+        exportTracks.clear();
+        ui->exportTracksList->clear();
+        ui->exportTrackButton->setEnabled(false);
     }
 }
 
