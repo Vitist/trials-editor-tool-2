@@ -37,35 +37,45 @@ QString RisingTrack::getName() const
 
 bool RisingTrack::exportToEditor(QString userId, QDir saveDir) const
 {
-    // Get track directory name
-    QStringList pathDirs = path.split("/");
-    QString trackDir = pathDirs.takeLast();
-    // Track index, 0 for editor tracks
-    QString editorTrackDirEnd = "-0000000000000";
-    // Track id consisting of a timestamp in seconds and gamemode indicator
-    QString trackId = trackDir.mid(32, 12);
-    // Construct a path for a new editor track using an existing track in favorites
-    QString exportTrackDir = userId + trackId + editorTrackDirEnd;
-    QString exportPath = saveDir.path() + QDir::separator() + exportTrackDir;
-    qDebug() << "Favorite path: " + path;
-    qDebug() << "Export path: " + exportPath;
-    // Create a directory for the converted track
-    bool dirCreated = saveDir.mkdir(exportTrackDir);
-    if(dirCreated) {
-        qDebug() << "Directory created";
+
+    QDir downloadsDir = saveDir;
+    QDir editorDir = saveDir;
+
+    // Find the user directory inside SavedGames
+    QFileInfoList userDirectories = downloadsDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    if (!userDirectories.empty()) {
+        downloadsDir.cd(userDirectories.first().fileName() + "/CacheStorage/usertracks");
+        editorDir.cd(userDirectories.first().fileName() + "/usertracks");
+        qDebug() << downloadsDir.path();
+        qDebug() << editorDir.path();
+
+        // Get track directory name
+        QStringList pathDirs = path.split("/");
+        QString trackDir = pathDirs.takeLast();
+        QString exportPath = editorDir.path() + QDir::separator() + trackDir;
+        qDebug() << "Download path: " + path;
+        qDebug() << "Export path: " + exportPath;
+        // Create a directory for the converted track
+        bool dirCreated = editorDir.mkdir(trackDir);
+        if(dirCreated) {
+            qDebug() << "Directory created";
+        } else {
+            qDebug() << "Directory could not be created or already exists";
+        }
+        copyFiles(exportPath);
+
+        // Convert hex strings to byte arrays
+        QByteArray userIdBytes = QByteArray::fromHex(userId.toLatin1());
+
+        // Convert track and metadata files to work in the users editor
+        convertMetadata(exportPath, userIdBytes);
+
+        return true;
     } else {
-        qDebug() << "Directory could not be created or already exists";
+        qDebug() << "No Rising user directory found";
+        return false;
     }
-    copyFiles(exportPath);
-
-    // Convert hex strings to byte arrays
-    QByteArray userIdBytes = QByteArray::fromHex(userId.toLatin1());
-
-    // Convert track and metadata files to work in the users editor
-    convertMetadata(exportPath, userIdBytes);
-
-    // TODO: change to void?
-    return true;
 }
 
 // Delete track files from SaveGames
@@ -83,8 +93,8 @@ void RisingTrack::convertMetadata(QString trackPath, QByteArray userId) const
         qDebug() << "Converting metadata " << name;
         QByteArray content = file.readAll();
         content.replace(5, 16, userId);
-        QByteArray zeros("00");
-        content.replace(31, 8, zeros.repeated(8));
+        QByteArray zeros = QByteArray::fromHex("00");
+        content.replace(30, 8, zeros.repeated(8));
         file.seek(0);
         file.write(content);
         file.close();

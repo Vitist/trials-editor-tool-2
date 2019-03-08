@@ -156,17 +156,6 @@ void TrialsEditorTool::scanRisingDownloads()
         qDebug() << "No Rising user directory found";
     }
 
-    /*int dirProcessedCount = 0;
-    statusProgress->setMaximum(downloadsDir.count());
-    statusProgress->setVisible(true);
-    foreach(QFileInfo track, downloadsDir) {
-        if(!track.filePath().contains(editorTrackIndex)) {
-            qDebug() << "Adding favorite: " << track.filePath();
-            availableTracks.append(std::shared_ptr<Track>(new FusionTrack(track.filePath())));
-        }
-        statusProgress->setValue(++dirProcessedCount);
-    }*/
-
     statusProgress->setVisible(false);
     if(availableTracks.count() == 1) {
         ui->statusBar->showMessage("Found " + QString::number(availableTracks.count()) + " track");
