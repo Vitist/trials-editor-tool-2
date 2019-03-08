@@ -46,7 +46,8 @@ private:
     Ui::TrialsEditorTool *ui;
     QProgressBar *statusProgress;
     Config config;
-    QDir saveDir;
+    QDir risingSaveDir;
+    QDir fusionSaveDir;
     QList<std::shared_ptr<Track>> editorTracks;
     QList<std::shared_ptr<Track>> availableTracks;
     QList<std::shared_ptr<Track>> exportTracks;
