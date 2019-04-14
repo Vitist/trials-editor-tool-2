@@ -10,6 +10,7 @@ public:
     virtual ~FusionTrack();
 
     QString getName() const;
+    QString getPath() const;
     bool exportToEditor(QString userId, QDir saveDir) const;
     bool removeFromDisk() const;
 

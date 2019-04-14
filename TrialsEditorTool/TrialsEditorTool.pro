@@ -33,7 +33,8 @@ SOURCES += \
     configdialog.cpp \
     trackoverwritedialog.cpp \
     fusiontrack.cpp \
-    risingtrack.cpp
+    risingtrack.cpp \
+    fusiontorisingtrack.cpp
 
 HEADERS += \
         trialseditortool.h \
@@ -42,7 +43,8 @@ HEADERS += \
     configdialog.h \
     trackoverwritedialog.h \
     fusiontrack.h \
-    risingtrack.h
+    risingtrack.h \
+    fusiontorisingtrack.h
 
 FORMS += \
         trialseditortool.ui \

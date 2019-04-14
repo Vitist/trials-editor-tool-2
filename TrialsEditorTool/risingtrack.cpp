@@ -35,47 +35,44 @@ QString RisingTrack::getName() const
     return name;
 }
 
+QString RisingTrack::getPath() const
+{
+    return path;
+}
+
 bool RisingTrack::exportToEditor(QString userId, QDir saveDir) const
 {
 
     QDir downloadsDir = saveDir;
     QDir editorDir = saveDir;
 
-    // Find the user directory inside SavedGames
-    QFileInfoList userDirectories = downloadsDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    downloadsDir.cd("CacheStorage/usertracks");
+    editorDir.cd("usertracks");
+    qDebug() << downloadsDir.path();
+    qDebug() << editorDir.path();
 
-    if (!userDirectories.empty()) {
-        downloadsDir.cd(userDirectories.first().fileName() + "/CacheStorage/usertracks");
-        editorDir.cd(userDirectories.first().fileName() + "/usertracks");
-        qDebug() << downloadsDir.path();
-        qDebug() << editorDir.path();
-
-        // Get track directory name
-        QStringList pathDirs = path.split("/");
-        QString trackDir = pathDirs.takeLast();
-        QString exportPath = editorDir.path() + QDir::separator() + trackDir;
-        qDebug() << "Download path: " + path;
-        qDebug() << "Export path: " + exportPath;
-        // Create a directory for the converted track
-        bool dirCreated = editorDir.mkdir(trackDir);
-        if(dirCreated) {
-            qDebug() << "Directory created";
-        } else {
-            qDebug() << "Directory could not be created or already exists";
-        }
-        copyFiles(exportPath);
-
-        // Convert hex strings to byte arrays
-        QByteArray userIdBytes = QByteArray::fromHex(userId.toLatin1());
-
-        // Convert track and metadata files to work in the users editor
-        convertMetadata(exportPath, userIdBytes);
-
-        return true;
+    // Get track directory name
+    QStringList pathDirs = path.split("/");
+    QString trackDir = pathDirs.takeLast();
+    QString exportPath = editorDir.path() + QDir::separator() + trackDir;
+    qDebug() << "Download path: " + path;
+    qDebug() << "Export path: " + exportPath;
+    // Create a directory for the converted track
+    bool dirCreated = editorDir.mkdir(trackDir);
+    if(dirCreated) {
+        qDebug() << "Directory created";
     } else {
-        qDebug() << "No Rising user directory found";
-        return false;
+        qDebug() << "Directory could not be created or already exists";
     }
+    copyFiles(exportPath);
+
+    // Convert hex strings to byte arrays
+    QByteArray userIdBytes = QByteArray::fromHex(userId.toLatin1());
+
+    // Convert track and metadata files to work in the users editor
+    convertMetadata(exportPath, userIdBytes);
+
+    return true;
 }
 
 // Delete track files from SaveGames

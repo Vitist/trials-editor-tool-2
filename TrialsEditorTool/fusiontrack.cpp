@@ -23,6 +23,11 @@ QString FusionTrack::getName() const
     return name;
 }
 
+QString FusionTrack::getPath() const
+{
+    return path;
+}
+
 bool FusionTrack::exportToEditor(QString userId, QDir saveDir) const
 {
     // Get track directory name

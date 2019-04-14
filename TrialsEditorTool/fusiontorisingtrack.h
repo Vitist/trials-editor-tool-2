@@ -1,13 +1,13 @@
-#ifndef RISINGTRACK_H
-#define RISINGTRACK_H
+#ifndef FUSIONTORISINGTRACK_H
+#define FUSIONTORISINGTRACK_H
 
 #include "track.h"
 
-class RisingTrack : public Track
+class FusionToRisingTrack : public Track
 {
 public:
-    RisingTrack(QString trackPath);
-    virtual ~RisingTrack();
+    FusionToRisingTrack(QString trackPath);
+    virtual ~FusionToRisingTrack();
 
     QString getName() const;
     QString getPath() const;
@@ -22,4 +22,4 @@ private:
     void copyFiles(QString destination) const;
 };
 
-#endif // RISINGTRACK_H
+#endif // FUSIONTORISINGTRACK_H

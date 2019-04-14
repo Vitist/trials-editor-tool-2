@@ -23,6 +23,7 @@ public:
     bool initialize(QString path);
     void scanFusionDownloads();
     void scanFusionEditor();
+    void scanFusionTracks();
     void scanRisingDownloads();
     void scanRisingEditor();
     void scanDownloads();
@@ -41,6 +42,8 @@ private slots:
     void on_selectDirLineEdit_editingFinished();
     void on_risingRadioButton_toggled(bool checked);
     void on_fusionRadioButton_toggled(bool checked);
+
+    void on_fusionToRisingRadioButton_toggled(bool checked);
 
 private:
     Ui::TrialsEditorTool *ui;

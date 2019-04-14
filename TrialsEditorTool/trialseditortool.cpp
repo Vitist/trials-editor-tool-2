@@ -2,6 +2,7 @@
 #include "ui_trialseditortool.h"
 #include "fusiontrack.h"
 #include "risingtrack.h"
+#include "fusiontorisingtrack.h"
 #include "config.h"
 #include "configdialog.h"
 #include "trackoverwritedialog.h"
@@ -38,13 +39,25 @@ bool TrialsEditorTool::initialize(QString path)
     // Find SavedGames directory path
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     // Check for Trials game saves in the Documents directory
-    risingSaveDir = QDir(documentsDirPath + "/Trials Rising/SavedGames");
     fusionSaveDir = QDir(documentsDirPath + "/TrialsFusion/SavedGames");
+    risingSaveDir = QDir(documentsDirPath + "/Trials Rising/SavedGames");
+    // Find directories inside SavedGames
+    QFileInfoList userDirectories = risingSaveDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    // Check if a user directory exists
+    foreach(QFileInfo dir, userDirectories) {
+        // User directory is always 36 charcters long
+        if(dir.baseName().count() == 36) {
+            // Change directory to the user directory
+            risingSaveDir.cd(userDirectories.first().fileName());
+        }
+    }
+    // Set available games and initialize config
     if (risingSaveDir.exists() && fusionSaveDir.exists()) {
         ui->selectDirLineEdit->setText(risingSaveDir.path());
         ui->risingRadioButton->setEnabled(true);
         ui->risingRadioButton->setChecked(true);
         ui->fusionRadioButton->setEnabled(true);
+        ui->fusionToRisingRadioButton->setEnabled(true);
         if(!config.load()) {
             if(!initWithRising(risingSaveDir)) {
                 initWithFusion(fusionSaveDir);
@@ -130,6 +143,31 @@ void TrialsEditorTool::scanFusionEditor()
 }
 
 /*
+ * Scan Fusion save directory for all tracks
+ */
+void TrialsEditorTool::scanFusionTracks()
+{
+    qDebug() << "\nScanning Fusion: " << fusionSaveDir.path();
+    ui->statusBar->showMessage("Scanning Fusion tracks...");
+
+    // Tracks end with an "-index"
+    QFileInfoList trackDirectories = fusionSaveDir.entryInfoList(QStringList() << "*-0000000*", QDir::Dirs | QDir::NoDotAndDotDot);
+
+    // Setup progress bar
+    int dirProcessedCount = 0;
+    statusProgress->setMaximum(trackDirectories.count());
+    statusProgress->setVisible(true);
+
+    // Find all downloaded tracks
+    foreach(QFileInfo track, trackDirectories) {
+        availableTracks.append(std::shared_ptr<Track>(new FusionToRisingTrack(track.filePath())));
+        statusProgress->setValue(++dirProcessedCount);
+    }
+    statusProgress->setVisible(false);
+    qDebug() << "Fusion scan complete\n";
+}
+
+/*
  * Scan Rising save directory for downloaded tracks
  */
 void TrialsEditorTool::scanRisingDownloads()
@@ -138,27 +176,18 @@ void TrialsEditorTool::scanRisingDownloads()
     qDebug() << "\nScanning Rising: " << downloadsDir.path();
     ui->statusBar->showMessage("Scanning Rising tracks");
 
-    // Find directories inside SavedGames
-    QFileInfoList userDirectories = downloadsDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    // Change directory to downloaded tracks directory inside the user directory
+    downloadsDir.cd("CacheStorage/usertracks");
+    // List all directories inside the download directory
+    QFileInfoList trackDirectories = downloadsDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    // Setup progress bar
+    int dirProcessedCount = 0;
+    statusProgress->setMaximum(trackDirectories.count());
+    statusProgress->setVisible(true);
 
-    // Check if a user directory exists
-    if (!userDirectories.empty()) {
-        // Change directory to downloaded tracks directory inside the user directory
-        downloadsDir.cd(userDirectories.first().fileName() + "/CacheStorage/usertracks");
-        // List all directories inside /CacheStorage/usertracks which should only contain downloaded tracks
-        QFileInfoList trackDirectories = downloadsDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-
-        // Setup progress bar
-        int dirProcessedCount = 0;
-        statusProgress->setMaximum(trackDirectories.count());
-        statusProgress->setVisible(true);
-
-        foreach(QFileInfo track, trackDirectories) {
-            availableTracks.append(std::shared_ptr<Track>(new RisingTrack(track.filePath())));
-            statusProgress->setValue(++dirProcessedCount);
-        }
-    } else {
-        qDebug() << "No Rising user directory found";
+    foreach(QFileInfo track, trackDirectories) {
+        availableTracks.append(std::shared_ptr<Track>(new RisingTrack(track.filePath())));
+        statusProgress->setValue(++dirProcessedCount);
     }
 
     statusProgress->setVisible(false);
@@ -172,32 +201,23 @@ void TrialsEditorTool::scanRisingDownloads()
 void TrialsEditorTool::scanRisingEditor()
 {
     QDir editorDir = risingSaveDir;
+    // Change directory to downloaded tracks directory inside the user directory
+    editorDir.cd("usertracks");
     qDebug() << "\nScanning: " << editorDir.path();
 
     editorTracks.clear();
 
-    // Find the user directory inside SavedGames
-    QFileInfoList userDirectories = editorDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-
     // Saved objects end with .o
     QString objectEnd = ".o";
 
-    // Check if a user directory exists
-    if (!userDirectories.empty()) {
-        // Change directory to downloaded tracks directory inside the user directory
-        editorDir.cd(userDirectories.first().fileName() + "/usertracks");
-        // List all directories inside usertracks which contains
-        // tracks and favorite objects created by the user
-        QFileInfoList trackDirectories = editorDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    // List all directories inside usertracks which contains tracks and favorite objects created by the user
+    QFileInfoList trackDirectories = editorDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
 
-        //Find all tracks created by the user
-        foreach(QFileInfo track, trackDirectories) {
-            if(!track.filePath().contains(objectEnd)) {
-                editorTracks.append(std::shared_ptr<Track>(new RisingTrack(track.filePath())));
-            }
+    //Find all tracks created by the user
+    foreach(QFileInfo track, trackDirectories) {
+        if(!track.filePath().contains(objectEnd)) {
+            editorTracks.append(std::shared_ptr<Track>(new RisingTrack(track.filePath())));
         }
-    } else {
-        qDebug() << "No Rising user directory found";
     }
 
     qDebug() << "Scan complete\n";
@@ -217,6 +237,9 @@ void TrialsEditorTool::scanDownloads()
     if(ui->fusionRadioButton->isEnabled()) {
         scanFusionDownloads();
     }
+    if(ui->fusionToRisingRadioButton->isEnabled()) {
+        scanFusionTracks();
+    }
 }
 
 /*
@@ -224,7 +247,7 @@ void TrialsEditorTool::scanDownloads()
  */
 void TrialsEditorTool::scanEditor()
 {
-    if(ui->risingRadioButton->isChecked()) {
+    if(ui->risingRadioButton->isChecked() || ui->fusionToRisingRadioButton->isChecked()) {
         scanRisingEditor();
     } else {
         scanFusionEditor();
@@ -257,40 +280,77 @@ void TrialsEditorTool::scanBrowseDir(QDir dir)
         int risingTrackCount = 0;
         int fusionTrackCount = 0;
 
+        bool metadataFound = false;
+        bool trackFound = false;
+        bool displaynameFound = false;
+
         // Iterate through the selected directory contents
         foreach(QFileInfo dirContent, dirContents) {
-            // Skip past object directories
-            if(!dirContent.fileName().contains(".o")){
-                // Check if currently selected directory is a track
-                if(dirContent.fileName() == "displayname") {
-                    // Fusion track
-                    availableTracks.append(std::shared_ptr<Track>(new FusionTrack(dir.path())));
-                    ++fusionTrackCount;
-                } else if(dirContent.fileName() == "thumbnail.thn") {
-                    // Rising track
-                    availableTracks.append(std::shared_ptr<Track>(new RisingTrack(dir.path())));
-                    ++risingTrackCount;
-                } else {
-                    // Only check files inside subdirectories
-                    QDir subDir(dirContent.filePath());
-                    QFileInfoList subDirContents = subDir.entryInfoList(QDir::Files);
-
-                    // Check if the subdirectory contains track files
-                    foreach(QFileInfo subDirContent, subDirContents) {
-                        if(subDirContent.fileName() == "displayname") {
-                            // Fusion track
-                            availableTracks.append(std::shared_ptr<Track>(new FusionTrack(subDir.path())));
-                            ++fusionTrackCount;
-                        } else if(subDirContent.fileName() == "thumbnail.thn") {
-                            // Rising track
-                            availableTracks.append(std::shared_ptr<Track>(new RisingTrack(subDir.path())));
-                            ++risingTrackCount;
-                        }
-                    }
-                }
+            qDebug() << "dir " << dirContent.fileName();
+            if(dirContent.fileName() == "metadata.mda") {
+                metadataFound = true;
+            } else if(dirContent.fileName() == "track.trk") {
+                trackFound = true;
+            } else if(dirContent.fileName() == "displayname") {
+                displaynameFound = true;
             }
             statusProgress->setValue(++dirProcessedCount);
         }
+
+        if(metadataFound && trackFound) {
+            // Directory is a track directory
+            if(displaynameFound) {
+                // Fusion track
+                availableTracks.append(std::shared_ptr<Track>(new FusionTrack(dir.path())));
+                availableTracks.append(std::shared_ptr<Track>(new FusionToRisingTrack(dir.path())));
+                ++fusionTrackCount;
+            } else {
+                // Rising track
+                availableTracks.append(std::shared_ptr<Track>(new RisingTrack(dir.path())));
+                ++risingTrackCount;
+            }
+        } else {
+            // Setup progress bar
+            dirProcessedCount = 0;
+            // Directory isn't a track directory, check sub directories
+            foreach(QFileInfo dirContent, dirContents) {
+                // Only check files inside subdirectories
+                QDir subDir(dirContent.filePath());
+                QFileInfoList subDirContents = subDir.entryInfoList(QDir::Files);
+
+                metadataFound = false;
+                trackFound = false;
+                displaynameFound = false;
+
+                // Check if the subdirectory contains track files
+                foreach(QFileInfo subDirContent, subDirContents) {
+                    qDebug() << "sub dir " << subDirContent.fileName();
+                    if(subDirContent.fileName() == "metadata.mda") {
+                        metadataFound = true;
+                    } else if(subDirContent.fileName() == "track.trk") {
+                        trackFound = true;
+                    } else if(subDirContent.fileName() == "displayname") {
+                        displaynameFound = true;
+                    }
+                }
+
+                if(metadataFound && trackFound) {
+                    // Directory is a track directory
+                    if(displaynameFound) {
+                        // Fusion track
+                        availableTracks.append(std::shared_ptr<Track>(new FusionTrack(subDir.path())));
+                        availableTracks.append(std::shared_ptr<Track>(new FusionToRisingTrack(subDir.path())));
+                        ++fusionTrackCount;
+                    } else {
+                        // Rising track
+                        availableTracks.append(std::shared_ptr<Track>(new RisingTrack(subDir.path())));
+                        ++risingTrackCount;
+                    }
+                }
+                statusProgress->setValue(++dirProcessedCount);
+            }
+        }
+
         statusProgress->setVisible(false);
 
         // Select the correct game, Rising by default
@@ -318,11 +378,17 @@ void TrialsEditorTool::setupAvailableList()
             track = std::dynamic_pointer_cast<RisingTrack>(track);
         } else if(ui->fusionRadioButton->isChecked()) {
             track = std::dynamic_pointer_cast<FusionTrack>(track);
+        } else if(ui->fusionToRisingRadioButton->isChecked()) {
+            track = std::dynamic_pointer_cast<FusionToRisingTrack>(track);
         }
 
         // Tracks for the wrong game couldn't be cast from base type to derived type
         if(track != nullptr) {
-            ui->availableTracksList->addItem(track->getName());
+            if(track->getPath().contains("-0000000000000")) {
+                ui->availableTracksList->addItem(track->getName() + " (editor)");
+            } else {
+                ui->availableTracksList->addItem(track->getName());
+            }
         }
     }
 
@@ -406,7 +472,16 @@ void TrialsEditorTool::on_addTrackButton_clicked()
 
         bool trackInExport = false;
         foreach(std::shared_ptr<Track> track, exportTracks) {
-            if(track->getName() == item->text()) {
+            QString selectedTrackName = item->text();
+            // Check if the track is editor track or downloaded track to avoid issues when
+            // an editor track and a downloaded track have the same name
+            if(selectedTrackName.contains(" (editor)")) {
+                selectedTrackName.chop(9);
+                if(track->getPath().contains("-0000000000000") && track->getName() == selectedTrackName) {
+                    trackInExport = true;
+                    qDebug() << "Track is already added to export";
+                }
+            } else if(!track->getPath().contains("-0000000000000") && track->getName() == selectedTrackName) {
                 trackInExport = true;
                 qDebug() << "Track is already added to export";
             }
@@ -415,10 +490,32 @@ void TrialsEditorTool::on_addTrackButton_clicked()
         // Find the selected track from favorites and add it to export
         if(!trackInExport) {
             foreach(std::shared_ptr<Track> track, availableTracks) {
-                if (track->getName() == item->text()) {
-                    exportTracks.append(track);
-                    ui->exportTracksList->addItem(item->text());
-                    ui->exportTrackButton->setEnabled(true);
+                // Only select tracks for the currently selected game
+                if(ui->risingRadioButton->isChecked()) {
+                    track = std::dynamic_pointer_cast<RisingTrack>(track);
+                } else if(ui->fusionRadioButton->isChecked()) {
+                    track = std::dynamic_pointer_cast<FusionTrack>(track);
+                } else if(ui->fusionToRisingRadioButton->isChecked()) {
+                    track = std::dynamic_pointer_cast<FusionToRisingTrack>(track);
+                }
+
+                // Tracks for the wrong game couldn't be cast from base type to derived type
+                if(track != nullptr) {
+                    QString selectedTrackName = item->text();
+                    // Check if the track is editor track or downloaded track to avoid issues when
+                    // an editor track and a downloaded track have the same name
+                    if(selectedTrackName.contains(" (editor)")) {
+                        selectedTrackName.chop(9);
+                        if(track->getPath().contains("-0000000000000") && track->getName() == selectedTrackName) {
+                            exportTracks.append(track);
+                            ui->exportTracksList->addItem(item->text());
+                            ui->exportTrackButton->setEnabled(true);
+                        }
+                    } else if(!track->getPath().contains("-0000000000000") && track->getName() == selectedTrackName) {
+                        exportTracks.append(track);
+                        ui->exportTracksList->addItem(item->text());
+                        ui->exportTrackButton->setEnabled(true);
+                    }
                 }
             }
         }
@@ -433,11 +530,21 @@ void TrialsEditorTool::on_removeTrackButton_clicked()
         qDebug() << "Removing track: " << item->text();
         // Find the selected track from export and remove it
         foreach(std::shared_ptr<Track> track, exportTracks) {
-            if(track->getName() == item->text()) {
+            QString selectedTrackName = item->text();
+            // Check if the track is editor track or downloaded track to avoid issues when
+            // an editor track and a downloaded track have the same name
+            if(selectedTrackName.contains(" (editor)")) {
+                selectedTrackName.chop(9);
+                if(track->getPath().contains("-0000000000000") && track->getName() == selectedTrackName) {
+                    exportTracks.removeAll(track);
+                    qDebug() << "Removed track: " << item->text();
+                }
+            } else if(!track->getPath().contains("-0000000000000") && track->getName() == selectedTrackName) {
                 exportTracks.removeAll(track);
+                qDebug() << "Removed track: " << item->text();
             }
         }
-        // Remove track from export tracks
+        // Remove track from export tracks list
         delete item;
     }
     if(exportTracks.isEmpty()) {
@@ -452,7 +559,7 @@ void TrialsEditorTool::on_exportTrackButton_clicked()
 
     // Get the currently selected game directory
     QDir saveDir;
-    if(ui->risingRadioButton->isChecked()) {
+    if(ui->risingRadioButton->isChecked() || ui->fusionToRisingRadioButton->isChecked()) {
         saveDir = risingSaveDir;
     } else if(ui->fusionRadioButton->isChecked()){
         saveDir = fusionSaveDir;
@@ -520,7 +627,7 @@ void TrialsEditorTool::on_favoritesButton_clicked()
     // Set the current directory path in UI to the selected game
     if(ui->risingRadioButton->isChecked()) {
         ui->selectDirLineEdit->setText(risingSaveDir.path());
-    } else if(ui->fusionRadioButton->isChecked()){
+    } else if(ui->fusionRadioButton->isChecked()  || ui->fusionToRisingRadioButton->isChecked()){
         ui->selectDirLineEdit->setText(fusionSaveDir.path());
     }
 
@@ -551,6 +658,22 @@ void TrialsEditorTool::on_risingRadioButton_toggled(bool checked)
 }
 
 void TrialsEditorTool::on_fusionRadioButton_toggled(bool checked)
+{
+    if(checked) {
+        // Change current directory path in UI
+        if(ui->selectDirLineEdit->text() == risingSaveDir.path()) {
+            ui->selectDirLineEdit->setText(fusionSaveDir.path());
+        }
+        setupAvailableList();
+
+        // Clear export track list
+        exportTracks.clear();
+        ui->exportTracksList->clear();
+        ui->exportTrackButton->setEnabled(false);
+    }
+}
+
+void TrialsEditorTool::on_fusionToRisingRadioButton_toggled(bool checked)
 {
     if(checked) {
         // Change current directory path in UI
