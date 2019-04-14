@@ -42,28 +42,23 @@ bool Config::initialize(QDir saveDir, Game game)
                 success = false;
             }
         } else {
-             QFileInfoList userDirectories = saveDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-             if(!userDirectories.isEmpty()) {
-                 // Extract uplay id from save directory name
-                 QString id = userDirectories.first().fileName();
-                 id.remove("-");
-                 QStringList idParts;
-                 while(id.length() > 0) {
-                     idParts << id.left(4);
-                     id.remove(0, 4);
-                 }
-                 // Rearrange the id into the form used by the games
-                 idParts.swap(0,3);
-                 idParts.swap(1,2);
-                 idParts.swap(2,3);
-                 idParts.swap(4,7);
-                 idParts.swap(5,6);
-                 userId = idParts.join("");
-                 qDebug() << "Config initialized with user id: " << userId;
-                 save();
-             } else {
-                success = false;
-             }
+            // Extract uplay id from save directory name
+            QString id = saveDir.dirName();
+            id.remove("-");
+            QStringList idParts;
+            while(id.length() > 0) {
+                idParts << id.left(4);
+                id.remove(0, 4);
+            }
+            // Rearrange the id into the form used by the games
+            idParts.swap(0,3);
+            idParts.swap(1,2);
+            idParts.swap(2,3);
+            idParts.swap(4,7);
+            idParts.swap(5,6);
+            userId = idParts.join("");
+            qDebug() << "Config initialized with user id: " << userId;
+            save();
         }
     }
     return success;
