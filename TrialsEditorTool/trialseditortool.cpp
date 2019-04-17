@@ -48,7 +48,7 @@ bool TrialsEditorTool::initialize(QString path)
         // User directory is always 36 charcters long
         if(dir.baseName().count() == 36) {
             // Change directory to the user directory
-            risingSaveDir.cd(userDirectories.first().fileName());
+            risingSaveDir.cd(dir.fileName());
         }
     }
     // Set available games and initialize config
