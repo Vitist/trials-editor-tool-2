@@ -11,6 +11,7 @@ public:
     virtual ~Track();
     virtual QString getName() const = 0;
     virtual QString getPath() const = 0;
+    virtual QByteArray getThumbnail() const = 0;
     virtual bool exportToEditor(QString userId, QDir saveDir) const = 0;
     virtual bool removeFromDisk() const = 0;
 };

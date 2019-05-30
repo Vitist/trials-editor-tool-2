@@ -28,8 +28,19 @@ QString FusionTrack::getPath() const
     return path;
 }
 
+QByteArray FusionTrack::getThumbnail() const
+{
+    // No thumbnail files available in Fusion
+    return QByteArray("NO_THUMBNAIL");
+}
+
 bool FusionTrack::exportToEditor(QString userId, QDir saveDir) const
 {
+    if(saveDir.path().contains("Rising")) {
+        // Track being ported to Rising
+    } else {
+        // Track stays in Fusion
+    }
     // Get track directory name
     QStringList pathDirs = path.split("/");
     QString trackDir = pathDirs.takeLast();

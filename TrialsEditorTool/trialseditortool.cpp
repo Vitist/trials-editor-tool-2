@@ -10,6 +10,7 @@
 #include <QDirIterator>
 #include <QStandardPaths>
 #include <QDebug>
+#include <FreeImage.h>
 
 TrialsEditorTool::TrialsEditorTool(QWidget *parent) :
     QMainWindow(parent),
@@ -36,6 +37,11 @@ TrialsEditorTool::~TrialsEditorTool()
  */
 bool TrialsEditorTool::initialize(QString path)
 {
+    qDebug() << "Initializing";
+    // FreeImage test
+    qDebug() << FreeImage_GetCopyrightMessage();
+    qDebug() << FreeImage_GetVersion();
+
     // Find SavedGames directory path
     const QString documentsDirPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     // Check for Trials game saves in the Documents directory
@@ -397,6 +403,14 @@ void TrialsEditorTool::setupAvailableList()
         ui->statusBar->showMessage("Found " + QString::number(ui->availableTracksList->count()) + " track");
     } else {
         ui->statusBar->showMessage("Found " + QString::number(ui->availableTracksList->count()) + " tracks");
+    }
+
+
+    // TODO: Remove thumbnail test
+    if (!availableTracks.isEmpty()) {
+        qDebug() << "Thumbnail content: " << availableTracks.first()->getThumbnail();
+        QImage trackThumbnail = QImage::fromData(availableTracks.first()->getThumbnail());
+        ui->trackThumbnailTest->setPixmap(QPixmap::fromImage(trackThumbnail));
     }
 }
 
