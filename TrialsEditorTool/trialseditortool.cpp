@@ -393,7 +393,13 @@ void TrialsEditorTool::setupAvailableList()
             if(track->getPath().contains("-0000000000000")) {
                 ui->availableTracksList->addItem(track->getName() + " (editor)");
             } else {
-                ui->availableTracksList->addItem(track->getName());
+                //ui->availableTracksList->addItem(track->getName());
+                QByteArray temp = track->getThumbnail();
+                QImage trackThumbnail = QImage::fromData(temp);
+                /*qDebug() << temp.left(20);
+                qDebug() << trackThumbnail.size();*/
+                QListWidgetItem *newItem = new QListWidgetItem(QIcon(QPixmap::fromImage(trackThumbnail)), track->getName());
+                ui->availableTracksList->addItem(newItem);
             }
         }
     }
@@ -403,14 +409,6 @@ void TrialsEditorTool::setupAvailableList()
         ui->statusBar->showMessage("Found " + QString::number(ui->availableTracksList->count()) + " track");
     } else {
         ui->statusBar->showMessage("Found " + QString::number(ui->availableTracksList->count()) + " tracks");
-    }
-
-
-    // TODO: Remove thumbnail test
-    if (!availableTracks.isEmpty()) {
-        qDebug() << "Thumbnail content: " << availableTracks.first()->getThumbnail();
-        QImage trackThumbnail = QImage::fromData(availableTracks.first()->getThumbnail());
-        ui->trackThumbnailTest->setPixmap(QPixmap::fromImage(trackThumbnail));
     }
 }
 

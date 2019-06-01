@@ -56,7 +56,7 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win32: LIBS += -L$$PWD/../../../FreeImage/Dist/x64/ -lFreeImage
+win32: LIBS += -L$$PWD/../../../FreeImage/Dist/x32/ -lFreeImage
 
-INCLUDEPATH += $$PWD/../../../FreeImage/Dist/x64
-DEPENDPATH += $$PWD/../../../FreeImage/Dist/x64
+INCLUDEPATH += $$PWD/../../../FreeImage/Dist/x32
+DEPENDPATH += $$PWD/../../../FreeImage/Dist/x32
