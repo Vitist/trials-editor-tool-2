@@ -122,6 +122,7 @@ QByteArray RisingTrack::getThumbnail() const
             // Free memory
             // TODO: figure out why closing destStream causes most images to not load
             FreeImage_Unload(srcBitMap);
+            FreeImage_Unload(srcBitMap24Bit);
             FreeImage_CloseMemory(srcStream);
             //FreeImage_CloseMemory(destStream);
             delete[] tempBuffer;

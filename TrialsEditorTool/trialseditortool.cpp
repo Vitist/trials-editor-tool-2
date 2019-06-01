@@ -398,11 +398,16 @@ void TrialsEditorTool::setupAvailableList()
                 QImage trackThumbnail = QImage::fromData(temp);
                 /*qDebug() << temp.left(20);
                 qDebug() << trackThumbnail.size();*/
-                QListWidgetItem *newItem = new QListWidgetItem(QIcon(QPixmap::fromImage(trackThumbnail)), track->getName());
+                QListWidgetItem *newItem = new QListWidgetItem(QIcon(QPixmap::fromImage(trackThumbnail.rgbSwapped())), track->getName());
+                newItem->setBackgroundColor(QColor(51, 51, 51));
+                newItem->setTextColor(Qt::white);
+                newItem->setFlags(newItem->flags() | Qt::ItemIsUserCheckable);
+                newItem->setCheckState(Qt::Unchecked);
                 ui->availableTracksList->addItem(newItem);
             }
         }
     }
+    ui->exportTracksList->hide();
 
     // Show how many tracks are in the list
     if(ui->availableTracksList->count() == 1) {
