@@ -118,19 +118,21 @@ QByteArray RisingTrack::getThumbnail() const
             BYTE *mem_buffer = nullptr;
             DWORD size_in_bytes = 0;
             FreeImage_AcquireMemory(destStream, &mem_buffer, &size_in_bytes);
+            // This does does a deep copy, required so we can close the memory stream and avoid leaks
+            imageData = QByteArray(reinterpret_cast<char *>(mem_buffer), static_cast<long>(size_in_bytes));
 
             // Free memory
-            // TODO: figure out why closing destStream causes most images to not load
             FreeImage_Unload(srcBitMap);
             FreeImage_Unload(srcBitMap24Bit);
             FreeImage_CloseMemory(srcStream);
-            //FreeImage_CloseMemory(destStream);
+            FreeImage_CloseMemory(destStream);
             delete[] tempBuffer;
 
             file.close();
 
             // Load raw data into QByteArray
-            return QByteArray::fromRawData(reinterpret_cast<char *>(mem_buffer), static_cast<long>(size_in_bytes));
+            return imageData;
+            //return QByteArray::fromRawData(reinterpret_cast<char *>(mem_buffer), static_cast<long>(size_in_bytes));
         } else {
             qDebug() << "Error reading image";
             delete[] tempBuffer;
