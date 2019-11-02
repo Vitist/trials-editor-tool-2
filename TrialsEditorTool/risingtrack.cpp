@@ -9,9 +9,8 @@ RisingTrack::RisingTrack(QString trackPath): path(trackPath)
    QFile file(trackPath + QDir::separator() + "metadata.mda");
     if(file.open(QIODevice::ReadOnly)) {
         QByteArray content = file.readAll();
-        QByteArray trackInfoStart = QByteArray::fromHex("4E20");
         // Track description
-        int readNextIndex = content.indexOf(trackInfoStart) + 2;
+        int readNextIndex = 131;
         int8_t dataLength = content.at(readNextIndex);
         // Track creator
         readNextIndex += dataLength + 7;
